@@ -2,5 +2,7 @@
   "name": "IERMS - Integrated Examination and Results Management System",
   "description": "Enterprise system unifying Online Examination Management (OEMS) and Student Result Management (SRMS) with PostgreSQL persistence, multi-role RBAC, question banking, exam delivery, mark entry, and result engine.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
