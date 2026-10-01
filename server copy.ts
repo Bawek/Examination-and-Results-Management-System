@@ -3,7 +3,6 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import session from 'express-session';
 import { initDatabase } from './src/server/db.ts';
 import { router as apiRouter } from './src/server/routes.ts';
 
@@ -19,22 +18,6 @@ async function startServer() {
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-  // Session middleware
-  app.use(
-    session({
-      name: 'ierms_sid',
-      secret: process.env.SESSION_SECRET || 'ierms-apex-super-secure-key-2026',
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: false,
-        httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        sameSite: 'lax',
-      },
-    })
-  );
 
   // Initialize Neon PostgreSQL database connection & run schema
   try {

@@ -1,10 +1,11 @@
-const getHeaders = () => {
+const getHeaders = (extra: Record<string, string> = {}) => {
   const activeRole = localStorage.getItem('ierms_active_role') || 'admin';
   const activeUserId = localStorage.getItem('ierms_active_user_id') || '';
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-user-role': activeRole,
+    ...extra,
   };
   if (activeUserId) {
     headers['x-user-id'] = activeUserId;
@@ -20,85 +21,92 @@ async function handleResponse(res: Response) {
   return res.json();
 }
 
+function req(url: string, options: RequestInit = {}) {
+  return fetch(url, {
+    ...options,
+    credentials: 'include',
+    headers: getHeaders((options.headers as Record<string, string>) || {}),
+  }).then(handleResponse);
+}
+
 export const api = {
   // Auth & System
-  getMe: () => fetch('/api/auth/me', { headers: getHeaders() }).then(handleResponse),
-  getUsersList: () => fetch('/api/auth/users-list', { headers: getHeaders() }).then(handleResponse),
-  getHealth: () => fetch('/api/system/health', { headers: getHeaders() }).then(handleResponse),
-  getDashboardStats: () => fetch('/api/dashboard/stats', { headers: getHeaders() }).then(handleResponse),
+  login: (data: { username: string; password: string }) =>
+    req('/api/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+  logout: () =>
+    req('/api/auth/logout', { method: 'POST' }),
+  getMe: () => req('/api/auth/me'),
+  getUsersList: () => req('/api/auth/users-list'),
+  getHealth: () => req('/api/system/health'),
+  getDashboardStats: () => req('/api/dashboard/stats'),
 
   // Settings & Master data
-  getSettings: () => fetch('/api/settings', { headers: getHeaders() }).then(handleResponse),
+  getSettings: () => req('/api/settings'),
   updateSettings: (data: any) =>
-    fetch('/api/settings', { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }).then(handleResponse),
+    req('/api/settings', { method: 'POST', body: JSON.stringify(data) }),
 
-  getAcademicYears: () => fetch('/api/academic-years', { headers: getHeaders() }).then(handleResponse),
-  getTerms: () => fetch('/api/terms', { headers: getHeaders() }).then(handleResponse),
-  getClasses: () => fetch('/api/classes', { headers: getHeaders() }).then(handleResponse),
-  getSubjects: () => fetch('/api/subjects', { headers: getHeaders() }).then(handleResponse),
+  getAcademicYears: () => req('/api/academic-years'),
+  getTerms: () => req('/api/terms'),
+  getClasses: () => req('/api/classes'),
+  getSubjects: () => req('/api/subjects'),
   createSubject: (data: any) =>
-    fetch('/api/subjects', { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }).then(handleResponse),
-  getClassSubjects: () => fetch('/api/class-subjects', { headers: getHeaders() }).then(handleResponse),
+    req('/api/subjects', { method: 'POST', body: JSON.stringify(data) }),
+  getClassSubjects: () => req('/api/class-subjects'),
 
   // People
-  getStudents: () => fetch('/api/students', { headers: getHeaders() }).then(handleResponse),
+  getStudents: () => req('/api/students'),
   createStudent: (data: any) =>
-    fetch('/api/students', { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }).then(handleResponse),
-  getTeachers: () => fetch('/api/teachers', { headers: getHeaders() }).then(handleResponse),
+    req('/api/students', { method: 'POST', body: JSON.stringify(data) }),
+  getTeachers: () => req('/api/teachers'),
 
   // Question Bank
-  getQuestions: () => fetch('/api/questions', { headers: getHeaders() }).then(handleResponse),
+  getQuestions: () => req('/api/questions'),
   createQuestion: (data: any) =>
-    fetch('/api/questions', { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }).then(handleResponse),
+    req('/api/questions', { method: 'POST', body: JSON.stringify(data) }),
 
   // Exams
-  getExams: () => fetch('/api/exams', { headers: getHeaders() }).then(handleResponse),
-  getExamDetail: (id: number | string) => fetch(`/api/exams/${id}`, { headers: getHeaders() }).then(handleResponse),
+  getExams: () => req('/api/exams'),
+  getExamDetail: (id: number | string) => req(`/api/exams/${id}`),
   createExam: (data: any) =>
-    fetch('/api/exams', { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }).then(handleResponse),
+    req('/api/exams', { method: 'POST', body: JSON.stringify(data) }),
   releaseExam: (id: number, forceOverride = false, reason = '') =>
-    fetch(`/api/exams/${id}/release`, {
+    req(`/api/exams/${id}/release`, {
       method: 'POST',
-      headers: getHeaders(),
       body: JSON.stringify({ forceOverride, reason })
-    }).then(handleResponse),
+    }),
   syncExamToMarks: (id: number) =>
-    fetch(`/api/exams/${id}/sync-to-marks`, { method: 'POST', headers: getHeaders() }).then(handleResponse),
+    req(`/api/exams/${id}/sync-to-marks`, { method: 'POST' }),
 
   // Candidate Sitting
   getAvailableExams: (studentId?: number) => {
     const url = studentId ? `/api/candidate/available-exams?studentId=${studentId}` : '/api/candidate/available-exams';
-    return fetch(url, { headers: getHeaders() }).then(handleResponse);
+    return req(url);
   },
   startAttempt: (examId: number, studentId?: number) =>
-    fetch('/api/candidate/start-attempt', {
+    req('/api/candidate/start-attempt', {
       method: 'POST',
-      headers: getHeaders(),
       body: JSON.stringify({ examId, studentId })
-    }).then(handleResponse),
+    }),
   getAttempt: (attemptId: number | string) =>
-    fetch(`/api/candidate/attempts/${attemptId}`, { headers: getHeaders() }).then(handleResponse),
+    req(`/api/candidate/attempts/${attemptId}`),
   saveAttemptAnswer: (attemptId: number | string, questionId: number, responseData: any) =>
-    fetch(`/api/candidate/attempts/${attemptId}/save`, {
+    req(`/api/candidate/attempts/${attemptId}/save`, {
       method: 'POST',
-      headers: getHeaders(),
       body: JSON.stringify({ questionId, responseData })
-    }).then(handleResponse),
+    }),
   submitAttempt: (attemptId: number | string, reason = '') =>
-    fetch(`/api/candidate/attempts/${attemptId}/submit`, {
+    req(`/api/candidate/attempts/${attemptId}/submit`, {
       method: 'POST',
-      headers: getHeaders(),
       body: JSON.stringify({ reason })
-    }).then(handleResponse),
+    }),
 
   // Grading Queue
-  getGradingQueue: () => fetch('/api/grading/queue', { headers: getHeaders() }).then(handleResponse),
+  getGradingQueue: () => req('/api/grading/queue'),
   gradeItem: (answerId: number, awardedMarks: number, feedback: string) =>
-    fetch('/api/grading/grade-item', {
+    req('/api/grading/grade-item', {
       method: 'POST',
-      headers: getHeaders(),
       body: JSON.stringify({ answerId, awardedMarks, feedback })
-    }).then(handleResponse),
+    }),
 
   // Assessments & Marks
   getAssessments: (classSubjectId?: number, termId?: number) => {
@@ -107,36 +115,34 @@ export const api = {
     if (classSubjectId) params.append('classSubjectId', classSubjectId.toString());
     if (termId) params.append('termId', termId.toString());
     if (params.toString()) url += `?${params.toString()}`;
-    return fetch(url, { headers: getHeaders() }).then(handleResponse);
+    return req(url);
   },
   createAssessment: (data: any) =>
-    fetch('/api/assessments', { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }).then(handleResponse),
+    req('/api/assessments', { method: 'POST', body: JSON.stringify(data) }),
   getMarksGrid: (classSubjectId: number, termId: number) =>
-    fetch(`/api/marks/grid?classSubjectId=${classSubjectId}&termId=${termId}`, { headers: getHeaders() }).then(handleResponse),
+    req(`/api/marks/grid?classSubjectId=${classSubjectId}&termId=${termId}`),
   saveMarks: (entries: any[], submitForReview = false, reason = '') =>
-    fetch('/api/marks/save', {
+    req('/api/marks/save', {
       method: 'POST',
-      headers: getHeaders(),
       body: JSON.stringify({ entries, submitForReview, reason })
-    }).then(handleResponse),
+    }),
 
   // Results & Publication
   getSectionResults: (termId: number, sectionId: number) =>
-    fetch(`/api/results/section-summary?termId=${termId}&sectionId=${sectionId}`, { headers: getHeaders() }).then(handleResponse),
+    req(`/api/results/section-summary?termId=${termId}&sectionId=${sectionId}`),
   publicationAction: (termId: number, sectionId: number, action: string, reason = '') =>
-    fetch('/api/results/publication-action', {
+    req('/api/results/publication-action', {
       method: 'POST',
-      headers: getHeaders(),
       body: JSON.stringify({ termId, sectionId, action, reason })
-    }).then(handleResponse),
+    }),
   getReportCard: (studentId: number, termId: number) =>
-    fetch(`/api/reports/report-card/${studentId}/${termId}`, { headers: getHeaders() }).then(handleResponse),
+    req(`/api/reports/report-card/${studentId}/${termId}`),
 
   // Audit Logs
   getAuditLogs: (action = '', entityType = '') => {
     let url = '/api/audit-logs?';
     if (action) url += `action=${encodeURIComponent(action)}&`;
     if (entityType) url += `entityType=${encodeURIComponent(entityType)}&`;
-    return fetch(url, { headers: getHeaders() }).then(handleResponse);
+    return req(url);
   }
 };

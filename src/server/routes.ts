@@ -2,38 +2,115 @@ import { Router, Request, Response } from 'express';
 import { query, pool } from './db.ts';
 import { calculateSectionResults } from './services/resultEngine.ts';
 import { syncExamToAssessment } from './services/examSync.ts';
+import bcrypt from 'bcryptjs';
 
 export const router = Router();
 
-// Middleware to extract/mock active user
-// In a full implementation, session cookies/JWT are verified.
-// We support both a current session header 'x-user-id' or 'x-user-role' for easy testing across roles.
-async function getUser(req: Request) {
-  const userId = req.headers['x-user-id'];
-  const userRole = req.headers['x-user-role'];
-
-  if (userId) {
-    const res = await query('SELECT * FROM users WHERE id = $1', [userId]);
-    if (res.rows.length > 0) return res.rows[0];
+// Extend session type
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+    userRole?: string;
   }
-
-  if (userRole) {
-    const res = await query('SELECT * FROM users WHERE role = $1 ORDER BY id ASC LIMIT 1', [userRole]);
-    if (res.rows.length > 0) return res.rows[0];
-  }
-
-  // Default to admin for seamless experience
-  const defaultRes = await query("SELECT * FROM users WHERE role = 'admin' LIMIT 1");
-  return defaultRes.rows[0] || null;
 }
 
-// -------------------------------------------------------------
-// Auth & User Switching
-// -------------------------------------------------------------
-router.get('/auth/me', async (req: Request, res: Response) => {
+// ─────────────────────────────────────────────────────────────
+// Session-based getUser helper
+// ─────────────────────────────────────────────────────────────
+async function getUser(req: Request) {
+  const sessionUserId = (req.session as any)?.userId;
+  if (sessionUserId) {
+    const res = await query('SELECT * FROM users WHERE id = $1 AND status = $2', [sessionUserId, 'active']);
+    if (res.rows.length > 0) return res.rows[0];
+  }
+  return null;
+}
+
+// Require authenticated session middleware
+function requireAuth(req: Request, res: Response, next: Function) {
+  if (!(req.session as any)?.userId) {
+    return res.status(401).json({ error: 'Not authenticated. Please log in.' });
+  }
+  next();
+}
+
+// ─────────────────────────────────────────────────────────────
+// Auth Routes
+// ─────────────────────────────────────────────────────────────
+
+// POST /api/auth/login
+router.post('/auth/login', async (req: Request, res: Response) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required.' });
+    }
+
+    const result = await query(
+      "SELECT * FROM users WHERE (username = $1 OR email = $1) AND status = 'active' LIMIT 1",
+      [username.trim().toLowerCase()]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid username or password.' });
+    }
+
+    const user = result.rows[0];
+
+    // Support both bcrypt hashes and legacy plain-text passwords
+    let passwordValid = false;
+    const hash: string = user.password_hash || '';
+    if (hash.startsWith('$2')) {
+      passwordValid = await bcrypt.compare(password, hash);
+    } else {
+      // Legacy plain-text comparison (dev seed data)
+      passwordValid = (password === hash);
+      if (passwordValid) {
+        // Upgrade to bcrypt hash on first login
+        const newHash = await bcrypt.hash(password, 12);
+        await query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, user.id]);
+      }
+    }
+
+    if (!passwordValid) {
+      return res.status(401).json({ error: 'Invalid username or password.' });
+    }
+
+    // Save session
+    (req.session as any).userId = user.id;
+    (req.session as any).userRole = user.role;
+
+    // Update last login
+    await query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
+
+    // Audit log
+    await query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, reason)
+       VALUES ($1, 'USER_LOGIN', 'USER', $2, 'Successful session login')`,
+      [user.id, user.id.toString()]
+    );
+
+    const { password_hash, ...safeUser } = user;
+    res.json({ user: safeUser });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/logout
+router.post('/auth/logout', (req: Request, res: Response) => {
+  req.session.destroy((err) => {
+    if (err) return res.status(500).json({ error: 'Logout failed.' });
+    res.clearCookie('ierms_sid');
+    res.json({ success: true });
+  });
+});
+
+// GET /api/auth/me  — requires session
+router.get('/auth/me', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
-    if (!user) return res.status(401).json({ error: 'User not authenticated' });
+    if (!user) return res.status(401).json({ error: 'Session expired. Please log in.' });
 
     let extra: any = {};
     if (user.role === 'student') {
@@ -44,15 +121,17 @@ router.get('/auth/me', async (req: Request, res: Response) => {
       extra.teacher = tRes.rows[0] || null;
     }
 
-    res.json({ user, ...extra });
+    const { password_hash, ...safeUser } = user;
+    res.json({ user: safeUser, ...extra });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-router.get('/auth/users-list', async (_req: Request, res: Response) => {
+// GET /api/auth/users-list  — admin only, returns safe user list
+router.get('/auth/users-list', requireAuth, async (req: Request, res: Response) => {
   try {
-    const users = await query('SELECT id, username, email, role, full_name FROM users ORDER BY id ASC');
+    const users = await query('SELECT id, username, email, role, full_name, status, last_login FROM users ORDER BY id ASC');
     res.json(users.rows);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

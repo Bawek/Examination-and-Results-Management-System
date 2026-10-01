@@ -5,9 +5,12 @@ import { api } from '../services/api.ts';
 interface AuthContextType {
   currentUser: User | null;
   currentRole: Role;
+  isAuthenticated: boolean;
   usersList: User[];
   studentProfile: any | null;
   teacherProfile: any | null;
+  login: (username: string, password: string) => Promise<any>;
+  logout: () => Promise<void>;
   switchRole: (role: Role, userId?: number) => Promise<void>;
   refreshProfile: () => Promise<void>;
   isLoading: boolean;
@@ -17,9 +20,7 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [currentRole, setCurrentRole] = useState<Role>(() => {
-    return (localStorage.getItem('ierms_active_role') as Role) || 'admin';
-  });
+  const [currentRole, setCurrentRole] = useState<Role>('admin');
   const [usersList, setUsersList] = useState<User[]>([]);
   const [studentProfile, setStudentProfile] = useState<any | null>(null);
   const [teacherProfile, setTeacherProfile] = useState<any | null>(null);
@@ -28,20 +29,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchSession = async () => {
     try {
       setIsLoading(true);
-      const [meData, usersData] = await Promise.all([
-        api.getMe().catch(() => null),
-        api.getUsersList().catch(() => [])
-      ]);
+      const meData = await api.getMe().catch(() => null);
 
       if (meData && meData.user) {
         setCurrentUser(meData.user);
         setCurrentRole(meData.user.role);
         setStudentProfile(meData.student || null);
         setTeacherProfile(meData.teacher || null);
+        localStorage.setItem('ierms_active_role', meData.user.role);
+        localStorage.setItem('ierms_active_user_id', meData.user.id.toString());
+      } else {
+        setCurrentUser(null);
       }
+
+      const usersData = await api.getUsersList().catch(() => []);
       setUsersList(usersData || []);
     } catch (err) {
       console.error('Error fetching auth session:', err);
+      setCurrentUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -50,6 +55,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     fetchSession();
   }, []);
+
+  const login = async (username: string, password: string) => {
+    const res = await api.login({ username, password });
+    if (res && res.user) {
+      setCurrentUser(res.user);
+      setCurrentRole(res.user.role);
+      localStorage.setItem('ierms_active_role', res.user.role);
+      localStorage.setItem('ierms_active_user_id', res.user.id.toString());
+      await fetchSession();
+      return res.user;
+    }
+    throw new Error(res.error || 'Authentication failed');
+  };
+
+  const logout = async () => {
+    try {
+      await api.logout();
+    } catch (err) {
+      console.warn('Logout request failed:', err);
+    }
+    setCurrentUser(null);
+    localStorage.removeItem('ierms_active_role');
+    localStorage.removeItem('ierms_active_user_id');
+  };
 
   const switchRole = async (role: Role, userId?: number) => {
     localStorage.setItem('ierms_active_role', role);
@@ -67,9 +96,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         currentUser,
         currentRole,
+        isAuthenticated: !!currentUser,
         usersList,
         studentProfile,
         teacherProfile,
+        login,
+        logout,
         switchRole,
         refreshProfile: fetchSession,
         isLoading,

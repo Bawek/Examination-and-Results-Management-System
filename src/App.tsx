@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Header } from './components/layout/Header.tsx';
 import { Sidebar } from './components/layout/Sidebar.tsx';
@@ -13,68 +13,197 @@ import { GradingQueue } from './components/teacher/GradingQueue.tsx';
 import { MarkEntryGrid } from './components/teacher/MarkEntryGrid.tsx';
 import { ResultsPublication } from './components/results/ResultsPublication.tsx';
 import { StudentDashboard } from './components/student/StudentDashboard.tsx';
+import { LoginPage } from './components/auth/LoginPage.tsx';
 
+/* ─────────────────────────────────────────────
+   Premium Loading Screen
+───────────────────────────────────────────── */
+function LoadingScreen() {
+  const [dots, setDots] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setDots(d => (d + 1) % 4), 350);
+    return () => clearInterval(id);
+  }, []);
+  const dotStr = '.'.repeat(dots).padEnd(3, '\u00A0');
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'radial-gradient(ellipse at 50% 60%, rgba(99,102,241,0.08), transparent 60%), #0b0d14',
+      gap: '24px',
+    }}>
+      {/* Animated logo circle */}
+      <div style={{ position: 'relative', width: '64px', height: '64px' }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '50%',
+          border: '2px solid rgba(99,102,241,0.15)',
+          borderTopColor: '#6366f1',
+          animation: 'spin-smooth 0.85s linear infinite',
+        }} />
+        <div style={{
+          position: 'absolute',
+          inset: '10px',
+          borderRadius: '50%',
+          border: '2px solid rgba(168,85,247,0.15)',
+          borderBottomColor: '#a855f7',
+          animation: 'spin-smooth 1.2s linear infinite reverse',
+        }} />
+        <div style={{
+          position: 'absolute',
+          inset: '22px',
+          borderRadius: '50%',
+          background: 'rgba(99,102,241,0.2)',
+        }} />
+      </div>
+
+      <div style={{ textAlign: 'center' }}>
+        <h2 style={{
+          fontSize: '18px',
+          fontWeight: 700,
+          background: 'linear-gradient(135deg, #818cf8, #c084fc)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          letterSpacing: '-0.02em',
+        }}>
+          Apex IERMS
+        </h2>
+        <p style={{
+          fontSize: '12px',
+          color: '#374151',
+          fontFamily: "'JetBrains Mono', monospace",
+          marginTop: '6px',
+          letterSpacing: '0.04em',
+        }}>
+          Connecting to Neon PostgreSQL{dotStr}
+        </p>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{
+        width: '200px',
+        height: '2px',
+        background: 'rgba(255,255,255,0.05)',
+        borderRadius: '100px',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          height: '100%',
+          borderRadius: '100px',
+          background: 'linear-gradient(90deg, #6366f1, #a855f7)',
+          animation: 'shimmer 1.8s linear infinite',
+          backgroundSize: '400px 100%',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Page Transition Wrapper
+───────────────────────────────────────────── */
+interface PageWrapperProps { children: React.ReactNode; tabKey: string; }
+function PageWrapper({ children, tabKey }: PageWrapperProps) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { setVisible(false); const id = requestAnimationFrame(() => setVisible(true)); return () => cancelAnimationFrame(id); }, [tabKey]);
+  return (
+    <div
+      key={tabKey}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(12px)',
+        transition: 'opacity 0.3s ease, transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Main Content
+───────────────────────────────────────────── */
 function MainContent() {
-  const { currentRole, isLoading } = useAuth();
+  const { currentUser, currentRole, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
+  // Enforce role-based access control on tabs
   useEffect(() => {
-    if (currentRole === 'student') {
-      setActiveTab('take-exam');
-    } else {
-      setActiveTab('dashboard');
-    }
-  }, [currentRole]);
+    if (!isAuthenticated) return;
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-mono text-slate-500">Connecting to Neon PostgreSQL Database...</p>
-        </div>
-      </div>
-    );
+    if (currentRole === 'student') {
+      if (activeTab !== 'take-exam' && activeTab !== 'student-results') {
+        setActiveTab('take-exam');
+      }
+    } else if (currentRole === 'teacher') {
+      const allowed = ['dashboard', 'questions', 'exams', 'grading', 'marks', 'results'];
+      if (!allowed.includes(activeTab)) {
+        setActiveTab('dashboard');
+      }
+    } else if (currentRole === 'registrar') {
+      const allowed = ['dashboard', 'results', 'marks', 'audit'];
+      if (!allowed.includes(activeTab)) {
+        setActiveTab('dashboard');
+      }
+    } else if (currentRole === 'invigilator') {
+      const allowed = ['dashboard', 'exams', 'audit'];
+      if (!allowed.includes(activeTab)) {
+        setActiveTab('dashboard');
+      }
+    }
+  }, [currentRole, isAuthenticated]);
+
+  if (isLoading) return <LoadingScreen />;
+
+  // Display LoginPage if user is not authenticated
+  if (!isAuthenticated || !currentUser) {
+    return <LoginPage />;
   }
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard':
-        return <AdminDashboard onNavigate={setActiveTab} />;
-      case 'questions':
-        return <QuestionBank />;
-      case 'exams':
-        return <ExamBuilder />;
-      case 'grading':
-        return <GradingQueue />;
-      case 'marks':
-        return <MarkEntryGrid />;
-      case 'results':
-        return <ResultsPublication />;
-      case 'people':
-        return <PeopleManager />;
-      case 'academic':
-        return <AcademicMaster />;
-      case 'setup':
-        return <InstitutionSetup />;
-      case 'audit':
-        return <AuditLogsViewer />;
-      case 'take-exam':
-        return <StudentDashboard />;
-      case 'student-results':
-        return <StudentDashboard />;
-      default:
-        return <AdminDashboard onNavigate={setActiveTab} />;
+      case 'dashboard':       return <AdminDashboard onNavigate={setActiveTab} />;
+      case 'questions':       return <QuestionBank />;
+      case 'exams':           return <ExamBuilder />;
+      case 'grading':         return <GradingQueue />;
+      case 'marks':           return <MarkEntryGrid />;
+      case 'results':         return <ResultsPublication />;
+      case 'people':          return <PeopleManager />;
+      case 'academic':        return <AcademicMaster />;
+      case 'setup':           return <InstitutionSetup />;
+      case 'audit':           return <AuditLogsViewer />;
+      case 'take-exam':       return <StudentDashboard />;
+      case 'student-results': return <StudentDashboard />;
+      default:                return <AdminDashboard onNavigate={setActiveTab} />;
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-0)', overflow: 'hidden' }}>
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
-      <div className="flex-1 flex max-w-7xl w-full mx-auto">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-          {renderContent()}
+      <div style={{ flex: 1, display: 'flex', width: '100%', minHeight: 0, overflow: 'hidden' }}>
+        {/* Full-height Sidebar */}
+        <div style={{ display: 'flex', flexShrink: 0 }}>
+          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        </div>
+        {/* Full-width Responsive Main Container */}
+        <main style={{
+          flex: 1,
+          padding: '24px 32px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          width: '100%',
+          minWidth: 0,
+        }}>
+          <PageWrapper tabKey={activeTab}>
+            {renderContent()}
+          </PageWrapper>
         </main>
       </div>
     </div>

@@ -1,9 +1,172 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api.ts';
-import { Users, FileText, CheckCircle2, ShieldAlert, Clock, ArrowUpRight, GraduationCap } from 'lucide-react';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge, Grid, Flex } from '../ui';
+import type { BadgeProps } from '../ui';
+import {
+  Users, FileText, CheckCircle2, ShieldAlert, Clock,
+  ArrowUpRight, GraduationCap, TrendingUp, Activity,
+  BookOpen, Award, BarChart3
+} from 'lucide-react';
 
 interface AdminDashboardProps {
   onNavigate: (tab: string) => void;
+}
+
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  sub: string;
+  icon: React.ElementType;
+  color: string;
+  glowColor: string;
+  trend?: string;
+}
+
+function StatCard({ label, value, sub, icon: Icon, color, glowColor, trend }: StatCardProps) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Card
+      hoverable
+      glow={hovered}
+      padding="md"
+      style={{
+        cursor: 'default',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Background gradient blob */}
+      <div style={{
+        position: 'absolute',
+        bottom: '-20px',
+        right: '-20px',
+        width: '100px',
+        height: '100px',
+        borderRadius: '50%',
+        background: `radial-gradient(circle, ${glowColor}18, transparent 70%)`,
+        pointerEvents: 'none',
+        transition: 'opacity 0.3s ease',
+        opacity: hovered ? 1 : 0.5,
+      }} />
+
+      <Flex align="flex-start" justify="space-between">
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            {label}
+          </p>
+          <p style={{
+            fontSize: '30px',
+            fontWeight: 800,
+            color: '#f1f5f9',
+            fontFamily: "'JetBrains Mono', monospace",
+            lineHeight: 1.1,
+            marginTop: '8px',
+            letterSpacing: '-0.03em',
+          }}>
+            {value}
+          </p>
+          <p style={{ fontSize: '11px', color: color, marginTop: '6px', fontWeight: 500 }}>
+            {sub}
+          </p>
+          {trend && (
+            <Flex gap={4} style={{ marginTop: '6px' }}>
+              <TrendingUp size={11} style={{ color: '#10b981' }} />
+              <span style={{ fontSize: '10px', color: '#10b981', fontWeight: 600 }}>{trend}</span>
+            </Flex>
+          )}
+        </div>
+        <div style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '10px',
+          background: `${glowColor}18`,
+          border: `1px solid ${glowColor}30`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <Icon size={18} style={{ color: glowColor }} />
+        </div>
+      </Flex>
+    </Card>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div style={{
+      background: 'rgba(17,24,39,0.6)',
+      border: '1px solid rgba(255,255,255,0.05)',
+      borderRadius: '14px',
+      padding: '20px',
+    }}>
+      <div className="skeleton" style={{ width: '60%', height: '12px', marginBottom: '16px' }} />
+      <div className="skeleton" style={{ width: '40%', height: '32px', marginBottom: '10px' }} />
+      <div className="skeleton" style={{ width: '70%', height: '10px' }} />
+    </div>
+  );
+}
+
+function ExamRow({ ex }: { ex: any }) {
+  const statusMap: Record<string, BadgeProps['variant']> = {
+    published: 'success',
+    results_released: 'info',
+    closed: 'muted',
+    draft: 'warning',
+    approved: 'brand',
+  };
+  const statusVariant = statusMap[ex.status] || 'warning';
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '12px 0',
+      borderBottom: '1px solid rgba(255,255,255,0.04)',
+      transition: 'background 0.15s ease',
+    }}>
+      <div style={{ minWidth: 0 }}>
+        <p style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {ex.title}
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#4b5563' }}>
+          <span>{ex.subject_name}</span>
+          <span style={{ color: '#1f2937' }}>·</span>
+          <span>{ex.class_name} ({ex.section_name})</span>
+          <span style={{ color: '#1f2937' }}>·</span>
+          <span style={{ fontFamily: 'monospace' }}>{ex.duration_minutes}m / {ex.total_marks}pts</span>
+        </div>
+      </div>
+      <Badge variant={statusVariant} style={{ marginLeft: '16px', flexShrink: 0 }}>
+        {ex.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+      </Badge>
+    </div>
+  );
+}
+
+function AuditRow({ log }: { log: any }) {
+  return (
+    <div style={{
+      padding: '10px 0',
+      borderBottom: '1px solid rgba(255,255,255,0.03)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px' }}>
+        <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', fontFamily: 'monospace' }}>
+          {log.action}
+        </span>
+        <span style={{ fontSize: '10px', color: '#374151', fontFamily: 'monospace' }}>
+          {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </span>
+      </div>
+      <p style={{ fontSize: '11px', color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {log.reason || log.entity_type} · by {log.user_name || 'System'}
+      </p>
+    </div>
+  );
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
@@ -17,207 +180,237 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return (
-      <div className="p-8 text-center text-slate-500 font-mono text-sm">
-        Loading system telemetry from Neon PostgreSQL...
-      </div>
-    );
-  }
-
   const counts = stats?.counts || {
-    students: 0,
-    teachers: 0,
-    exams: 0,
-    activeExams: 0,
-    pendingGrading: 0,
-    publishedResults: 0,
-    auditLogs: 0,
+    students: 0, teachers: 0, exams: 0, activeExams: 0,
+    pendingGrading: 0, publishedResults: 0, auditLogs: 0,
   };
 
+  const statCards: StatCardProps[] = [
+    {
+      label: 'Enrolled Students',
+      value: counts.students,
+      sub: 'Active enrolments · Grade 10',
+      icon: Users,
+      color: '#38bdf8',
+      glowColor: '#38bdf8',
+      trend: '+3 this term',
+    },
+    {
+      label: 'Faculty Teachers',
+      value: counts.teachers,
+      sub: 'Assigned to class-subjects',
+      icon: GraduationCap,
+      color: '#34d399',
+      glowColor: '#10b981',
+    },
+    {
+      label: 'Active Exams (OEMS)',
+      value: `${counts.activeExams} / ${counts.exams}`,
+      sub: 'Server-time window open',
+      icon: Clock,
+      color: '#34d399',
+      glowColor: '#10b981',
+    },
+    {
+      label: 'Pending Grading',
+      value: counts.pendingGrading,
+      sub: 'Subjective essays awaiting review',
+      icon: ShieldAlert,
+      color: '#fbbf24',
+      glowColor: '#f59e0b',
+    },
+    {
+      label: 'Published Results',
+      value: counts.publishedResults ?? 0,
+      sub: 'Term results released to students',
+      icon: CheckCircle2,
+      color: '#a5b4fc',
+      glowColor: '#6366f1',
+    },
+    {
+      label: 'Audit Events',
+      value: counts.auditLogs ?? 0,
+      sub: 'Immutable governance log entries',
+      icon: Activity,
+      color: '#f87171',
+      glowColor: '#ef4444',
+    },
+  ];
+
   return (
-    <div className="space-y-8">
-      {/* Top Banner & Quick Overview */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+
+      {/* ── Page Header ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            System Administration Overview
+          <h1 style={{
+            fontSize: '22px',
+            fontWeight: 800,
+            letterSpacing: '-0.03em',
+            background: 'linear-gradient(135deg, #f1f5f9, #94a3b8)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            System Administration
           </h1>
-          <p className="text-sm text-slate-600 mt-1">
-            Integrated Examination Management (OEMS) & Student Result Management (SRMS)
+          <p style={{ fontSize: '13px', color: '#374151', marginTop: '4px' }}>
+            Integrated Examination Management (OEMS) &amp; Student Result Management (SRMS)
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
+        <Flex gap={8}>
+          <Button
             onClick={() => onNavigate('exams')}
-            className="px-3.5 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-md transition-colors shadow-sm"
+            icon={<BookOpen size={13} />}
           >
             Create Examination
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
             onClick={() => onNavigate('results')}
-            className="px-3.5 py-2 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-md transition-colors"
+            icon={<Award size={13} />}
           >
             Review Term Results
-          </button>
-        </div>
+          </Button>
+        </Flex>
       </div>
 
-      {/* KPI Metric Cards (60-30-10 palette, tabular-nums) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-5 bg-white border border-slate-200 rounded-lg">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Enrolled Students</span>
-            <Users className="w-4 h-4 text-slate-400" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
-            {counts.students}
-          </div>
-          <div className="mt-1 text-[11px] text-slate-500">
-            Grade 10 · Active enrollments
-          </div>
-        </div>
+      {/* ── KPI Stats Grid ── */}
+      <Grid columns={3} gap={14} className="stagger animate-fade-in-up">
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+          : statCards.map((card) => <StatCard key={card.label} {...card} />)
+        }
+      </Grid>
 
-        <div className="p-5 bg-white border border-slate-200 rounded-lg">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Faculty Teachers</span>
-            <GraduationCap className="w-4 h-4 text-slate-400" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
-            {counts.teachers}
-          </div>
-          <div className="mt-1 text-[11px] text-slate-500">
-            Assigned to class-subjects
-          </div>
-        </div>
+      {/* ── Main Content Grid ── */}
+      <Grid columns="1fr 340px" gap={16}>
 
-        <div className="p-5 bg-white border border-slate-200 rounded-lg">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Active Exams (OEMS)</span>
-            <Clock className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
-            {counts.activeExams} / {counts.exams}
-          </div>
-          <div className="mt-1 text-[11px] text-emerald-600 font-medium">
-            Server-time window open
-          </div>
-        </div>
-
-        <div className="p-5 bg-white border border-slate-200 rounded-lg">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Pending Grading Queue</span>
-            <ShieldAlert className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
-            {counts.pendingGrading}
-          </div>
-          <div className="mt-1 text-[11px] text-amber-600 font-medium">
-            Subjective essays awaiting review
-          </div>
-        </div>
-      </div>
-
-      {/* Main Grid: Recent Exams & Audit Trail */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Recent Exams */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-lg p-5">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        {/* Recent Exams */}
+        <Card padding="md">
+          <CardHeader>
             <div>
-              <h2 className="text-base font-semibold text-slate-900">
-                Recent Examinations & Sittings
-              </h2>
-              <p className="text-xs text-slate-500">
-                Online exams created, scheduled, and released to candidates
-              </p>
+              <CardTitle>Recent Examinations &amp; Sittings</CardTitle>
+              <CardDescription>Online exams created, scheduled, and released to candidates</CardDescription>
             </div>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => onNavigate('exams')}
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
+              icon={<ArrowUpRight size={13} />}
+              iconPosition="right"
             >
-              <span>View All</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+              View All
+            </Button>
+          </CardHeader>
 
-          <div className="divide-y divide-slate-100 mt-2">
-            {stats?.recentExams?.length === 0 ? (
-              <p className="py-6 text-center text-xs text-slate-400">No examinations found.</p>
-            ) : (
-              stats?.recentExams?.map((ex: any) => (
-                <div key={ex.id} className="py-3 flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-slate-900">{ex.title}</div>
-                    <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
-                      <span>{ex.subject_name}</span>
-                      <span>·</span>
-                      <span>{ex.class_name} ({ex.section_name})</span>
-                      <span>·</span>
-                      <span className="font-mono tabular-nums">{ex.duration_minutes} mins</span>
-                      <span>·</span>
-                      <span className="font-mono tabular-nums">{ex.total_marks} marks</span>
-                    </div>
-                  </div>
-                  <div>
-                    <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded ${
-                        ex.status === 'published'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : ex.status === 'results_released'
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                          : 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      {ex.status === 'results_released' ? 'Results Released' : ex.status}
-                    </span>
-                  </div>
+          {loading ? (
+            <div style={{ paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {[1,2,3].map(i => (
+                <div key={i}>
+                  <div className="skeleton" style={{ width: '60%', height: '13px', marginBottom: '8px' }} />
+                  <div className="skeleton" style={{ width: '80%', height: '10px' }} />
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Right Column: Immutable Audit Trail */}
-        <div className="bg-white border border-slate-200 rounded-lg p-5">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-            <div>
-              <h2 className="text-base font-semibold text-slate-900">
-                Audit Trail (ADM-01)
-              </h2>
-              <p className="text-xs text-slate-500">
-                Immutable security and governance log
-              </p>
+              ))}
             </div>
-            <button
-              onClick={() => onNavigate('audit')}
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
-            >
-              <span>Full Log</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          ) : stats?.recentExams?.length === 0 ? (
+            <div style={{ padding: '40px 0', textAlign: 'center' }}>
+              <FileText size={32} style={{ color: '#1f2937', margin: '0 auto 12px' }} />
+              <p style={{ fontSize: '13px', color: '#374151' }}>No examinations found.</p>
+              <p style={{ fontSize: '11px', color: '#1f2937', marginTop: '4px' }}>Create your first exam to get started.</p>
+            </div>
+          ) : (
+            stats?.recentExams?.map((ex: any) => <ExamRow key={ex.id} ex={ex} />)
+          )}
+        </Card>
 
-          <div className="space-y-3 mt-3">
-            {stats?.recentLogs?.length === 0 ? (
-              <p className="text-xs text-slate-400 text-center py-4">No audit events recorded.</p>
-            ) : (
-              stats?.recentLogs?.map((log: any) => (
-                <div key={log.id} className="text-xs border-b border-slate-50 pb-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-medium text-slate-800">{log.action}</span>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5 truncate">
-                    {log.reason || log.entity_type} · by {log.user_name || 'System'}
-                  </div>
+        {/* Audit Trail */}
+        <Card padding="md">
+          <CardHeader>
+            <div>
+              <CardTitle>Audit Trail</CardTitle>
+              <CardDescription>Immutable security log (ADM-01)</CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onNavigate('audit')}
+              icon={<ArrowUpRight size={13} />}
+              iconPosition="right"
+            >
+              Full Log
+            </Button>
+          </CardHeader>
+
+          {loading ? (
+            <div style={{ paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[1,2,3,4].map(i => (
+                <div key={i}>
+                  <div className="skeleton" style={{ width: '70%', height: '11px', marginBottom: '6px' }} />
+                  <div className="skeleton" style={{ width: '90%', height: '9px' }} />
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
+              ))}
+            </div>
+          ) : stats?.recentLogs?.length === 0 ? (
+            <p style={{ fontSize: '12px', color: '#374151', textAlign: 'center', padding: '32px 0' }}>
+              No audit events recorded.
+            </p>
+          ) : (
+            stats?.recentLogs?.map((log: any) => <AuditRow key={log.id} log={log} />)
+          )}
+        </Card>
+      </Grid>
+
+      {/* ── Quick Action Links ── */}
+      <Grid columns={4} gap={10}>
+        {[
+          { label: 'Question Bank', sub: 'Manage QBK',       tab: 'questions', icon: BarChart3,   color: '#6366f1' },
+          { label: 'People Manager', sub: 'Students & Staff',tab: 'people',    icon: Users,       color: '#10b981' },
+          { label: 'Academic Setup', sub: 'Classes & Terms', tab: 'academic',  icon: BookOpen,    color: '#f59e0b' },
+          { label: 'Audit Viewer',   sub: 'Security Logs',   tab: 'audit',     icon: Activity,    color: '#ef4444' },
+        ].map(({ label, sub, tab, icon: Icon, color }) => (
+          <Button
+            key={tab}
+            variant="ghost"
+            onClick={() => onNavigate(tab)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '14px 16px',
+              borderRadius: '12px',
+              background: 'rgba(17,24,39,0.6)',
+              border: '1px solid rgba(255,255,255,0.05)',
+              textAlign: 'left',
+              justifyContent: 'flex-start',
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = 'rgba(17,24,39,0.9)';
+              el.style.borderColor = `${color}30`;
+              el.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = 'rgba(17,24,39,0.6)';
+              el.style.borderColor = 'rgba(255,255,255,0.05)';
+              el.style.transform = 'translateY(0)';
+            }}
+          >
+            <div style={{
+              width: '36px', height: '36px', borderRadius: '9px',
+              background: `${color}18`, border: `1px solid ${color}30`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <Icon size={16} style={{ color }} />
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>{label}</div>
+              <div style={{ fontSize: '10px', color: '#374151', marginTop: '1px' }}>{sub}</div>
+            </div>
+          </Button>
+        ))}
+      </Grid>
     </div>
   );
 };
