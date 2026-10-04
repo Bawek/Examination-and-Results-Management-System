@@ -17,47 +17,49 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   const variantStyles = {
     success: {
-      background: 'rgba(16,185,129,0.12)',
-      color: '#34d399',
-      border: '1px solid rgba(16,185,129,0.25)',
+      background: '#dcfce7',
+      color: '#166534',
+      border: '1px solid #bbf7d0',
     },
     warning: {
-      background: 'rgba(245,158,11,0.12)',
-      color: '#fbbf24',
-      border: '1px solid rgba(245,158,11,0.25)',
+      background: '#fef9c3',
+      color: '#854d0e',
+      border: '1px solid #fde047',
     },
     danger: {
-      background: 'rgba(239,68,68,0.12)',
-      color: '#f87171',
-      border: '1px solid rgba(239,68,68,0.25)',
+      background: '#fee2e2',
+      color: '#991b1b',
+      border: '1px solid #fca5a5',
     },
     info: {
-      background: 'rgba(56,189,248,0.12)',
-      color: '#38bdf8',
-      border: '1px solid rgba(56,189,248,0.25)',
+      background: '#dbeafe',
+      color: '#1e40af',
+      border: '1px solid #93c5fd',
     },
     brand: {
-      background: 'rgba(99,102,241,0.15)',
-      color: '#a5b4fc',
-      border: '1px solid rgba(99,102,241,0.3)',
+      background: '#ede9fe',
+      color: '#4c1d95',
+      border: '1px solid #c4b5fd',
     },
     muted: {
-      background: 'rgba(255,255,255,0.05)',
-      color: 'var(--text-secondary)',
-      border: '1px solid var(--border-muted)',
+      background: '#f1f5f9',
+      color: '#475569',
+      border: '1px solid #e2e8f0',
     },
   };
 
   const sizeStyles = {
     sm: {
-      padding: '2px 9px',
-      fontSize: '11px',
+      padding: '4px 10px',
+      fontSize: '12px',
       gap: '4px',
+      lineHeight: '1.4',
     },
     md: {
-      padding: '4px 12px',
-      fontSize: '12px',
+      padding: '6px 14px',
+      fontSize: '13px',
       gap: '6px',
+      lineHeight: '1.4',
     },
   };
 

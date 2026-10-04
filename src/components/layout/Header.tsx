@@ -5,14 +5,16 @@ import { Role } from '../../types/index.ts';
 import { Button, Badge } from '../ui';
 import crestImage from '../../assets/images/apex_academy_crest_1790666516021.jpg';
 import {
-  Database, UserCheck, ChevronDown, Check,
+  Database, ChevronDown, ChevronLeft,
   Zap, BookOpen, BarChart3, Settings, ShieldAlert,
-  LogOut, User as UserIcon
+  LogOut, Menu
 } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  sidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 const roleBadgeVariants: Record<Role, 'brand' | 'success' | 'info' | 'warning' | 'muted'> = {
@@ -39,10 +41,11 @@ const roleIcons: Record<Role, React.ElementType> = {
   invigilator: Zap,
 };
 
-export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
-  const { currentUser, currentRole, usersList, switchRole, logout } = useAuth();
+export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, sidebarCollapsed = false, onToggleSidebar }) => {
+  const { currentUser, currentRole, logout } = useAuth();
   const [dbStatus, setDbStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowRoleMenu(false);
+        setShowUserMenu(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -73,7 +76,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
   ];
 
   const visibleLinks = navLinks.filter(l => l.roles.includes(currentRole));
-  const RoleIcon = roleIcons[currentRole];
 
   return (
     <header
@@ -81,15 +83,44 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        background: 'rgba(11,13,20,0.92)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderBottom: '1px solid rgba(99,102,241,0.12)',
-        boxShadow: '0 1px 30px rgba(0,0,0,0.4)',
+        background: 'rgba(255,255,255,0.95)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        borderBottom: '1px solid #e2e8f0',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
       }}
     >
       <div style={{ width: '100%', padding: '0 28px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px' }}>
+
+          {/* ── Sidebar Toggle ── */}
+          {onToggleSidebar && (
+            <button
+              onClick={onToggleSidebar}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                background: '#ede9fe',
+                border: '1px solid #c4b5fd',
+                color: '#4f46e5',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                marginRight: '8px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#ddd6fe';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#ede9fe';
+              }}
+            >
+              {sidebarCollapsed ? <Menu size={18} /> : <ChevronLeft size={18} />}
+            </button>
+          )}
 
           {/* ── Brand ── */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
@@ -99,8 +130,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
               height: '38px',
               borderRadius: '10px',
               overflow: 'hidden',
-              border: '1px solid rgba(99,102,241,0.3)',
-              boxShadow: '0 0 14px rgba(99,102,241,0.25)',
+              border: '1px solid #e2e8f0',
               flexShrink: 0,
             }}>
               <img
@@ -111,16 +141,11 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-              <span style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '-0.02em', color: '#f1f5f9' }}>
+              <span style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a' }}>
                 Apex{' '}
-                <span style={{
-                  background: 'linear-gradient(135deg, #818cf8, #c084fc)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}>IERMS</span>
+                <span style={{ color: '#4f46e5' }}>IERMS</span>
               </span>
-              <span style={{ fontSize: '10px', color: '#4b5563', fontWeight: 500, marginTop: '2px', letterSpacing: '0.02em' }}>
+              <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 500, marginTop: '2px', letterSpacing: '0.02em' }}>
                 Integrated Examination &amp; Results System
               </span>
             </div>
@@ -128,22 +153,59 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
 
           {/* ── Nav Links ── */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-            {visibleLinks.map((link) => (
-              <Button
-                key={link.id}
-                variant={activeTab === link.id ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => setActiveTab(link.id)}
-                style={{
-                  fontWeight: activeTab === link.id ? 600 : 500,
-                  color: activeTab === link.id ? '#a5b4fc' : '#64748b',
-                  background: activeTab === link.id ? 'rgba(99,102,241,0.12)' : 'transparent',
-                  borderColor: activeTab === link.id ? 'rgba(99,102,241,0.25)' : 'transparent',
-                }}
-              >
-                {link.label}
-              </Button>
-            ))}
+            {visibleLinks.map((link) => {
+              const isActive = activeTab === link.id;
+              const isNavigating = navigatingTo === link.id;
+
+              return (
+                <Button
+                  key={link.id}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (link.id !== activeTab) {
+                      setNavigatingTo(link.id);
+                      setActiveTab(link.id);
+                      setTimeout(() => setNavigatingTo(null), 400);
+                    }
+                  }}
+                  disabled={isNavigating}
+                  style={{
+                    fontWeight: isActive ? 600 : 500,
+                    color: isActive ? '#4338ca' : '#6b7280',
+                    background: isActive ? '#ede9fe' : 'transparent',
+                    borderColor: isActive ? '#c4b5fd' : 'transparent',
+                    border: isActive ? '1px solid #c4b5fd' : '1px solid transparent',
+                    opacity: isNavigating ? 0.6 : 1,
+                    cursor: isNavigating ? 'wait' : 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLElement).style.background = '#f8fafc';
+                      (e.currentTarget as HTMLElement).style.color = '#0f172a';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLElement).style.color = '#6b7280';
+                    }
+                  }}
+                >
+                  {isNavigating && (
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.1), transparent)',
+                      animation: 'shimmer 0.8s linear infinite',
+                    }} />
+                  )}
+                  <span style={{ position: 'relative', zIndex: 1 }}>{link.label}</span>
+                </Button>
+              );
+            })}
           </nav>
 
           {/* ── Right Zone ── */}
@@ -164,179 +226,124 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
               Neon DB
             </Badge>
 
-            {/* Role Switcher & User Profile */}
+            {/* User Profile */}
             <div ref={menuRef} style={{ position: 'relative' }}>
               <button
-                onClick={() => setShowRoleMenu(!showRoleMenu)}
+                onClick={() => setShowUserMenu(!showUserMenu)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  padding: '5px 12px',
+                  gap: '10px',
+                  padding: '6px 14px',
                   borderRadius: '10px',
-                  background: 'rgba(99,102,241,0.1)',
-                  border: '1px solid rgba(99,102,241,0.25)',
-                  color: '#a5b4fc',
-                  fontSize: '12px',
-                  fontWeight: 600,
+                  background: '#ede9fe',
+                  border: '1px solid #c4b5fd',
+                  color: '#4c1d95',
+                  fontSize: '13px',
+                  fontWeight: 500,
                   cursor: 'pointer',
                   transition: 'all 0.18s ease',
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.18)';
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.4)';
+                  (e.currentTarget as HTMLElement).style.background = '#ddd6fe';
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.1)';
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.25)';
+                  (e.currentTarget as HTMLElement).style.background = '#ede9fe';
                 }}
               >
                 <div style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '6px',
-                  background: 'rgba(99,102,241,0.25)',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  color: '#ffffff',
+                  fontWeight: 600,
+                  fontSize: '12px',
                 }}>
-                  <RoleIcon size={13} style={{ color: '#c7d2fe' }} />
+                  {currentUser?.username?.substring(0, 2).toUpperCase() || 'US'}
                 </div>
-                <div style={{ textAlign: 'left', lineHeight: 1.2 }}>
-                  <div style={{ color: '#f1f5f9', fontSize: '12px', fontWeight: 600 }}>
-                    {currentUser?.full_name?.split(' ')[0] || roleLabels[currentRole]}
+                <div style={{ textAlign: 'left', lineHeight: 1.3 }}>
+                  <div style={{ color: '#0f172a', fontSize: '13px', fontWeight: 600 }}>
+                    {currentUser?.full_name?.split(' ')[0] || currentUser?.username}
                   </div>
-                  <div style={{ color: '#818cf8', fontSize: '10px', textTransform: 'capitalize' }}>
-                    {currentRole}
+                  <div style={{ color: '#4f46e5', fontSize: '11px', textTransform: 'capitalize' }}>
+                    {roleLabels[currentRole]}
                   </div>
                 </div>
                 <ChevronDown
-                  size={12}
+                  size={14}
                   style={{
-                    transform: showRoleMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)',
                     transition: 'transform 0.2s ease',
                     opacity: 0.6,
-                    marginLeft: '4px',
+                    color: '#4c1d95',
                   }}
                 />
               </button>
 
-              {showRoleMenu && (
+              {showUserMenu && (
                 <div
                   style={{
                     position: 'absolute',
                     right: 0,
                     marginTop: '8px',
-                    width: '290px',
-                    background: 'rgba(17,24,39,0.98)',
-                    backdropFilter: 'blur(24px)',
-                    border: '1px solid rgba(99,102,241,0.25)',
+                    width: '260px',
+                    background: '#fff',
+                    border: '1px solid #e2e8f0',
                     borderRadius: '14px',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(99,102,241,0.12)',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
                     overflow: 'hidden',
                     zIndex: 100,
                     animation: 'fadeInUp 0.2s cubic-bezier(0.4,0,0.2,1) both',
                   }}
                 >
                   {/* Current user header */}
-                  <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(99,102,241,0.06)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{
-                        width: '34px',
-                        height: '34px',
-                        borderRadius: '10px',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '12px',
                         background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: '#ffffff',
                         fontWeight: 700,
-                        fontSize: '13px',
+                        fontSize: '14px',
                       }}>
                         {currentUser?.username?.substring(0, 2).toUpperCase() || 'US'}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {currentUser?.full_name || currentUser?.username}
                         </div>
-                        <div style={{ fontSize: '11px', color: '#94a3b8', fontFamily: "'JetBrains Mono', monospace" }}>
-                          @{currentUser?.username || 'user'} · <span style={{ color: '#818cf8', fontWeight: 600 }}>{roleLabels[currentRole]}</span>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                          @{currentUser?.username || 'user'}
                         </div>
+                        <Badge
+                          variant={roleBadgeVariants[currentRole]}
+                          style={{ marginTop: '6px', fontSize: '10px', padding: '2px 8px' }}
+                        >
+                          {roleLabels[currentRole]}
+                        </Badge>
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ padding: '10px 16px 6px' }}>
-                    <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b', margin: 0 }}>
-                      Switch Active Role View
-                    </p>
-                  </div>
-
-                  {(['admin', 'teacher', 'student', 'registrar', 'invigilator'] as Role[]).map((r) => {
-                    const matchedUser = usersList.find((u) => u.role === r);
-                    const isActive = currentRole === r;
-                    const Icon = roleIcons[r];
-                    return (
-                      <button
-                        key={r}
-                        onClick={() => { switchRole(r, matchedUser?.id); setShowRoleMenu(false); }}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '8px 16px',
-                          background: isActive ? 'rgba(99,102,241,0.12)' : 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'background 0.15s ease',
-                          borderLeft: isActive ? '3px solid #818cf8' : '3px solid transparent',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent';
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{
-                            width: '26px',
-                            height: '26px',
-                            borderRadius: '7px',
-                            background: isActive ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.04)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}>
-                            <Icon size={13} style={{ color: isActive ? '#a5b4fc' : '#64748b' }} />
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '12px', fontWeight: 600, color: isActive ? '#a5b4fc' : '#94a3b8' }}>
-                              {roleLabels[r]}
-                            </div>
-                            {matchedUser && (
-                              <div style={{ fontSize: '10px', color: '#4b5563', fontFamily: 'monospace', marginTop: '1px' }}>
-                                {matchedUser.username}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {isActive && <Check size={13} style={{ color: '#818cf8', flexShrink: 0 }} />}
-                      </button>
-                    );
-                  })}
-
                   {/* Log Out button */}
-                  <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.2)' }}>
+                  <div style={{ padding: '10px' }}>
                     <Button
-                      variant="danger"
+                      variant="ghost"
                       fullWidth
-                      onClick={() => { setShowRoleMenu(false); logout(); }}
-                      icon={<LogOut size={13} />}
+                      onClick={() => { setShowUserMenu(false); logout(); }}
+                      icon={<LogOut size={14} />}
+                      style={{ justifyContent: 'flex-start', padding: '10px 14px' }}
                     >
-                      Log Out System
+                      Log Out
                     </Button>
                   </div>
                 </div>

@@ -1,0 +1,44 @@
+{
+  "id": "FEAT-001",
+  "type": "refactor",
+  "description": "Migrate the design system foundation to a light theme. This covers index.css (design tokens and global base), all six shared UI primitives (Button, Input, Card, Badge, Modal, Layout), App.tsx shell, Header.tsx, and Sidebar.tsx. These files are the root cause of the fragmented dark-on-light appearance — every page component uses these primitives. Completing this FEAT alone will visually fix the chrome (navigation, cards, badges, buttons, modals) across all screens without touching page-specific code.",
+  "status": "completed",
+  "steps": [
+    "1. Rewrite src/index.css: Replace :root dark tokens (--surface-*, --border-*, --text-*) with light-theme tokens: --bg-app:#f8fafc, --surface-card:#ffffff, --border-default:#e2e8f0, --text-heading:#0f172a, --text-body:#475569, --text-muted:#94a3b8. Keep --brand-* indigo values (already correct). Rewrite body rule: background-color:var(--bg-app); color:var(--text-heading); remove radial gradient blobs. Remove dark utility classes: .glass, .glass-card, .btn-primary/.btn-secondary/.btn-ghost, .input-dark, .table-dark, .nav-item-active (dark version). Add light utility helpers: .page-container {display:flex;flex-direction:column;gap:1.5rem}, .form-grid-2 {display:grid;grid-template-columns:1fr 1fr;gap:1rem}, .form-grid-3 {display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}. Keep all @keyframes, .skeleton, .loader-ring, .page-enter, .animate-fade-in-up, .stagger, .mono.",
+
+    "2. Rewrite src/components/ui/Button.tsx: Keep ButtonProps interface unchanged (no new/removed props). Update variantStyles: primary={background:#4f46e5,color:#fff,border:#4f46e5,boxShadow:0 1px 3px rgba(79,70,229,0.3)}, secondary={background:#fff,border:1px solid #e2e8f0,color:#374151}, ghost={background:transparent,color:#6b7280,border:transparent}, danger={background:#fee2e2,color:#b91c1c,border:1px solid #fca5a5}. Update hoverStyles to match. Loading spinner: border-color rgba(79,70,229,0.3), border-top-color #4f46e5. Add focus-visible outline: 2px solid #6366f1 offset 2px via onFocus handler or CSS.",
+
+    "3. Rewrite src/components/ui/Input.tsx: Keep exports Input, Select, Textarea with existing prop interfaces. Add optional helper?:string prop to InputProps — destructure it out before ...props spread. Update base styles to light: background:#fff, border:1px solid #cbd5e1, border-radius:8px, padding:10px 14px, color:#0f172a. Focus: border-color:#6366f1, box-shadow:0 0 0 3px rgba(99,102,241,0.15). Error border: #ef4444. Label: color:#374151, font-size:13px, font-weight:500. Render helper text as <p style={{fontSize:'12px',color:'#6b7280',marginTop:'6px'}}> when helper prop provided. Select and Textarea: same border/focus colours.",
+
+    "4. Rewrite src/components/ui/Card.tsx: Remove className='glass-card' from rendered div. Update variant styles: default={background:#fff,border:1px solid #e2e8f0,boxShadow:0 1px 3px rgba(0,0,0,0.06)}, glass={background:#fff,border:1px solid #e2e8f0,boxShadow:0 1px 3px rgba(0,0,0,0.06)} (same as default — glass morphism removed), bordered={background:#fff,border:1px solid #e2e8f0}. Hoverable adds boxShadow:0 4px 12px rgba(0,0,0,0.08) and translateY(-1px) on hover. Keep glow prop in interface but make it no-op (prevents breaking callers). CardTitle color:#0f172a. CardDescription color:#64748b. CardFooter border: 1px solid #e2e8f0 (remove purple rgba).",
+
+    "5. Rewrite src/components/ui/Badge.tsx: Update variantStyles to light pastel: success={bg:#dcfce7,color:#166534,border:#bbf7d0}, warning={bg:#fef9c3,color:#854d0e,border:#fde047}, danger={bg:#fee2e2,color:#991b1b,border:#fca5a5}, info={bg:#dbeafe,color:#1e40af,border:#93c5fd}, brand={bg:#ede9fe,color:#4c1d95,border:#c4b5fd}, muted={bg:#f1f5f9,color:#475569,border:#e2e8f0}. Keep all other props unchanged.",
+
+    "6. Rewrite src/components/ui/Modal.tsx: Modal panel: background:#fff, border:1px solid #e2e8f0, border-radius:16px, box-shadow:0 20px 60px rgba(0,0,0,0.15). Remove backdropFilter from panel (keep rgba(0,0,0,0.5) backdrop on overlay div). Header: border-bottom:1px solid #e2e8f0, title color:#0f172a font-size:16px font-weight:600. Close button: color:#9ca3af, hover color:#374151 background:#f1f5f9. ModalFooter: border-top:1px solid #e2e8f0.",
+
+    "7. Rewrite src/components/ui/Layout.tsx: Section title color:#0f172a, description color:#64748b. Divider: background:#e2e8f0. Container, Flex, Grid, Spacer are structure-only — no colour changes.",
+
+    "8. Update src/App.tsx shell: MainContent outer div background: '#f8fafc'. LoadingScreen: outer div background 'linear-gradient(135deg,#eef2ff,#f1f5f9)', spinner border-color '#c7d2fe' border-top-color '#4f46e5', heading color '#4f46e5' (remove gradient-text), subtitle color '#64748b'. Keep NavigationProgress and PageWrapper unchanged.",
+
+    "9. Rewrite src/components/layout/Header.tsx: Background #fff (or rgba(255,255,255,0.95) with blur), border-bottom 1px solid #e2e8f0, box-shadow 0 1px 3px rgba(0,0,0,0.08). Brand 'Apex' text color:#0f172a, 'IERMS' color:#4f46e5 (remove WebkitBackgroundClip gradient). Nav active button: background:#ede9fe, color:#4338ca, border:1px solid #c4b5fd. Nav inactive: color:#6b7280, hover background:#f8fafc color:#0f172a. Sidebar toggle button: background:#ede9fe border:1px solid #c4b5fd color:#4f46e5. User profile button: background:#ede9fe border:1px solid #c4b5fd color:#4c1d95. User dropdown: background:#fff border:1px solid #e2e8f0 box-shadow:0 8px 30px rgba(0,0,0,0.12), header section background:#f8fafc.",
+
+    "10. Rewrite src/components/layout/Sidebar.tsx: Background #fff, border-right:1px solid #e2e8f0, remove backdropFilter. Active item: background:#ede9fe, border-left:3px solid #4f46e5, color:#4338ca, font-weight:600. Active icon: #4f46e5. Hover item: background:#f8fafc color:#374151. Hover icon: #374151. Inactive: color:#6b7280 icon:#9ca3af. Toggle button: background:#ede9fe border:1px solid #c4b5fd icon:#4f46e5. Bottom branding: background:#f8fafc border:1px solid #e2e8f0 color:#64748b."
+  ],
+  "acceptance_criteria": [
+    "npm run lint exits with 0 TypeScript errors",
+    "npm run build completes successfully with no missing module errors",
+    "The Input component renders helper text when helper prop is provided",
+    "The Input component does not pass helper prop to native <input> element (no TypeScript error)",
+    "Card component no longer applies glass-card CSS class to its rendered div",
+    "All Badge variants render with light pastel backgrounds (not dark translucent rgba)",
+    "Modal overlay uses white panel background (not dark glass)",
+    "Sidebar renders white background with indigo active-item highlight",
+    "Header renders white background with no dark surfaces"
+  ],
+  "verification": [
+    "cd 'c:\\Users\\bawek\\OneDrive\\Documents\\software-product\\lms\\Examination-and-Results-Management-System' && npm run lint",
+    "cd 'c:\\Users\\bawek\\OneDrive\\Documents\\software-product\\lms\\Examination-and-Results-Management-System' && npm run build"
+  ],
+  "blocked_reason": null,
+  "findings": "All 10 steps completed. Light theme tokens applied to index.css (--bg-app, --surface-card, --border-default, --text-heading, --text-body, --text-muted). Dark utility classes removed; layout helpers added (.page-container, .form-grid-2, .form-grid-3). All 6 UI primitives rewritten with light-theme inline styles. App.tsx LoadingScreen and MainContent background updated. Header and Sidebar now render white backgrounds with indigo active-item highlights. A pre-existing TS error in PeopleManager.tsx (s.name → s.section_name) was also fixed to achieve clean lint. Next FEAT steps can proceed directly to page-level components."
+}

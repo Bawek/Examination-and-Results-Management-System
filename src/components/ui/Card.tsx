@@ -26,48 +26,54 @@ export const Card: React.FC<CardProps> = ({
 
   const variantStyles = {
     default: {
-      background: 'rgba(17,24,39,0.8)',
-      border: '1px solid rgba(255,255,255,0.06)',
-      boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
     },
     glass: {
-      background: 'var(--surface-card)',
-      backdropFilter: 'blur(20px) saturate(160%)',
-      WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-      border: '1px solid var(--border-subtle)',
-      boxShadow: 'var(--shadow-card)',
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
     },
     bordered: {
-      background: 'rgba(17,24,39,0.6)',
-      border: '1px solid var(--border-muted)',
+      background: '#ffffff',
+      border: '1px solid #e2e8f0',
     },
   };
 
   const paddingStyles = {
-    sm: { padding: '16px' },
-    md: { padding: '20px' },
-    lg: { padding: '24px' },
+    sm: { padding: '20px' },
+    md: { padding: '24px' },
+    lg: { padding: '28px' },
   };
 
-  const glowStyles = glow ? {
-    boxShadow: '0 0 30px rgba(99,102,241,0.2), 0 0 60px rgba(99,102,241,0.06)',
-  } : {};
-
-  const hoverStyles = hoverable ? {
+  // glow prop kept in interface for backward compat but is a no-op
+  const hoverableStyles = hoverable ? {
     cursor: 'default',
   } : {};
 
   return (
     <div
-      className={`glass-card ${className}`}
+      className={className}
       style={{
         ...baseStyles,
         ...variantStyles[variant],
         ...paddingStyles[padding],
-        ...glowStyles,
-        ...hoverStyles,
+        ...hoverableStyles,
         ...style,
       }}
+      onMouseEnter={hoverable ? (e) => {
+        Object.assign(e.currentTarget.style, {
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          transform: 'translateY(-1px)',
+        });
+      } : undefined}
+      onMouseLeave={hoverable ? (e) => {
+        Object.assign(e.currentTarget.style, {
+          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+          transform: 'translateY(0)',
+        });
+      } : undefined}
     >
       {children}
     </div>
@@ -80,7 +86,7 @@ interface CardHeaderProps {
 }
 
 export const CardHeader: React.FC<CardHeaderProps> = ({ children, style }) => (
-  <div style={{ marginBottom: '16px', ...style }}>{children}</div>
+  <div style={{ marginBottom: '20px', ...style }}>{children}</div>
 );
 
 interface CardTitleProps {
@@ -91,13 +97,13 @@ interface CardTitleProps {
 
 export const CardTitle: React.FC<CardTitleProps> = ({ children, size = 'md', style }) => {
   const sizeStyles = {
-    sm: { fontSize: '13px', fontWeight: 700 },
-    md: { fontSize: '14px', fontWeight: 700 },
-    lg: { fontSize: '16px', fontWeight: 800 },
+    sm: { fontSize: '14px', fontWeight: 600, lineHeight: '1.5', letterSpacing: '0.01em' },
+    md: { fontSize: '16px', fontWeight: 600, lineHeight: '1.5', letterSpacing: '0.01em' },
+    lg: { fontSize: '18px', fontWeight: 700, lineHeight: '1.4', letterSpacing: '0.01em' },
   };
 
   return (
-    <h2 style={{ color: '#e2e8f0', ...sizeStyles[size], ...style }}>
+    <h2 style={{ color: '#0f172a', ...sizeStyles[size], ...style }}>
       {children}
     </h2>
   );
@@ -109,7 +115,7 @@ interface CardDescriptionProps {
 }
 
 export const CardDescription: React.FC<CardDescriptionProps> = ({ children, style }) => (
-  <p style={{ fontSize: '11px', color: '#374151', marginTop: '2px', ...style }}>
+  <p style={{ fontSize: '13px', color: '#64748b', marginTop: '6px', lineHeight: '1.6', letterSpacing: '0.01em', ...style }}>
     {children}
   </p>
 );
@@ -129,7 +135,7 @@ interface CardFooterProps {
 }
 
 export const CardFooter: React.FC<CardFooterProps> = ({ children, style }) => (
-  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)', ...style }}>
+  <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #e2e8f0', ...style }}>
     {children}
   </div>
 );

@@ -19,16 +19,19 @@ export const Button: React.FC<ButtonProps> = ({
   children,
   disabled,
   style,
+  onFocus,
   ...props
 }) => {
   const baseStyles = {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '6px',
+    gap: '10px',
     borderRadius: '8px',
-    fontSize: '13px',
-    fontWeight: 600,
+    fontSize: '14px',
+    fontWeight: 500,
+    lineHeight: '1.5',
+    letterSpacing: '0.01em',
     cursor: disabled || loading ? 'not-allowed' : 'pointer',
     transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
     border: '1px solid transparent',
@@ -38,50 +41,51 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles = {
     primary: {
-      background: 'linear-gradient(135deg, var(--brand-600), var(--brand-700))',
+      background: '#4f46e5',
       color: '#fff',
-      borderColor: 'var(--brand-600)',
-      boxShadow: '0 2px 10px rgba(99,102,241,0.35)',
+      borderColor: '#4f46e5',
+      boxShadow: '0 1px 3px rgba(79,70,229,0.3)',
     },
     secondary: {
-      background: 'rgba(255,255,255,0.05)',
-      color: 'var(--text-primary)',
-      borderColor: 'var(--border-muted)',
+      background: '#fff',
+      color: '#374151',
+      borderColor: '#e2e8f0',
+      border: '1px solid #e2e8f0',
     },
     ghost: {
       background: 'transparent',
-      color: 'var(--text-secondary)',
+      color: '#6b7280',
       borderColor: 'transparent',
     },
     danger: {
-      background: 'rgba(239, 68, 68, 0.1)',
-      color: '#fca5a5',
-      borderColor: 'rgba(239, 68, 68, 0.25)',
+      background: '#fee2e2',
+      color: '#b91c1c',
+      borderColor: '#fca5a5',
+      border: '1px solid #fca5a5',
     },
   };
 
   const sizeStyles = {
-    sm: { padding: '6px 12px', fontSize: '12px' },
-    md: { padding: '8px 16px', fontSize: '13px' },
-    lg: { padding: '10px 20px', fontSize: '14px' },
+    sm: { padding: '10px 16px', fontSize: '13px' },
+    md: { padding: '12px 20px', fontSize: '14px' },
+    lg: { padding: '14px 24px', fontSize: '15px' },
   };
 
   const hoverStyles = variant === 'primary' ? {
-    background: 'linear-gradient(135deg, var(--brand-500), var(--brand-600))',
-    boxShadow: '0 4px 16px rgba(99,102,241,0.45)',
+    background: '#4338ca',
+    boxShadow: '0 4px 12px rgba(79,70,229,0.35)',
     transform: 'translateY(-1px)',
   } : variant === 'secondary' ? {
-    background: 'rgba(255,255,255,0.09)',
-    borderColor: 'rgba(255,255,255,0.14)',
+    background: '#f8fafc',
+    borderColor: '#cbd5e1',
   } : variant === 'ghost' ? {
-    background: 'rgba(255,255,255,0.06)',
-    color: 'var(--text-primary)',
+    background: '#f3f4f6',
+    color: '#374151',
   } : variant === 'danger' ? {
-    background: 'rgba(239, 68, 68, 0.2)',
-    borderColor: 'rgba(239, 68, 68, 0.4)',
+    background: '#fecaca',
+    borderColor: '#f87171',
   } : {};
 
-  // Allow custom styles to override default styles
   const mergedStyles = {
     ...baseStyles,
     ...variantStyles[variant],
@@ -108,6 +112,14 @@ export const Button: React.FC<ButtonProps> = ({
           });
         }
       }}
+      onFocus={(e) => {
+        e.currentTarget.style.outline = '2px solid #6366f1';
+        e.currentTarget.style.outlineOffset = '2px';
+        onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.outline = 'none';
+      }}
       {...props}
     >
       {loading && (
@@ -115,8 +127,8 @@ export const Button: React.FC<ButtonProps> = ({
           style={{
             width: '14px',
             height: '14px',
-            border: '2px solid rgba(255,255,255,0.3)',
-            borderTopColor: '#ffffff',
+            border: '2px solid rgba(79,70,229,0.3)',
+            borderTopColor: '#4f46e5',
             borderRadius: '50%',
             animation: 'spin-smooth 0.8s linear infinite',
           }}

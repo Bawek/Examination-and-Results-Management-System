@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api.ts';
 import { Student, Teacher, SchoolClass, Section } from '../../types/index.ts';
-import { Users, UserPlus, Upload, ShieldCheck, Clock } from 'lucide-react';
+import { Users, UserPlus, Upload, ShieldCheck, Clock, X } from 'lucide-react';
+import { Button, Input, Select, Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui';
 
 export const PeopleManager: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -258,195 +259,281 @@ STU-2026-006,Zara,Patel,F,2010-10-30,Amina Patel,+1-555-8822`
 
       {/* Add Student Modal */}
       {showAddStudent && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl space-y-4">
-            <h3 className="text-base font-bold text-slate-900">Register New Student (REC-01)</h3>
-            <form onSubmit={handleCreateStudent} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-medium text-slate-700 mb-1">Admission Number</label>
-                <input
-                  type="text"
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+          padding: '20px',
+        }}>
+          <Card style={{ maxWidth: '500px', width: '100%' }}>
+            <CardHeader style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <CardTitle>Register New Student (REC-01)</CardTitle>
+              <button
+                onClick={() => setShowAddStudent(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                  e.currentTarget.style.color = '#94a3b8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.color = '#64748b';
+                }}
+              >
+                <X size={18} />
+              </button>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateStudent} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <Input
+                  label="Admission Number"
                   placeholder="e.g. STU-2026-010"
                   value={newAdmission}
                   onChange={(e) => setNewAdmission(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded focus:ring-1 focus:ring-slate-900 font-mono"
                   required
+                  fullWidth
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">First Name</label>
-                  <input
-                    type="text"
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <Input
+                    label="First Name"
                     value={newFirst}
                     onChange={(e) => setNewFirst(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded"
                     required
+                    fullWidth
                   />
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Last Name</label>
-                  <input
-                    type="text"
+                  <Input
+                    label="Last Name"
                     value={newLast}
                     onChange={(e) => setNewLast(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded"
                     required
+                    fullWidth
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Gender</label>
-                  <select
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <Select
+                    label="Gender"
                     value={newGender}
                     onChange={(e) => setNewGender(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded"
+                    fullWidth
                   >
                     <option value="M">Male</option>
                     <option value="F">Female</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Date of Birth</label>
-                  <input
+                  </Select>
+                  <Input
+                    label="Date of Birth"
                     type="date"
                     value={newDob}
                     onChange={(e) => setNewDob(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded font-mono"
+                    fullWidth
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Assign Class</label>
-                  <select
-                    value={newClassId}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <Select
+                    label="Assign Class"
+                    value={String(newClassId)}
                     onChange={(e) => setNewClassId(parseInt(e.target.value, 10))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded"
+                    fullWidth
                   >
-                    {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Assign Section</label>
-                  <select
-                    value={newSectionId}
+                    {classes.map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
+                  </Select>
+                  <Select
+                    label="Assign Section"
+                    value={String(newSectionId)}
                     onChange={(e) => setNewSectionId(parseInt(e.target.value, 10))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded"
+                    fullWidth
                   >
-                    {sections.map(s => <option key={s.id} value={s.id}>{s.section_name}</option>)}
-                  </select>
+                    {sections.map(s => <option key={s.id} value={String(s.id)}>{s.section_name}</option>)}
+                  </Select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Guardian Name</label>
-                  <input
-                    type="text"
-                    value={newGuardian}
-                    onChange={(e) => setNewGuardian(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Guardian Phone</label>
-                  <input
-                    type="text"
-                    value={newPhone}
-                    onChange={(e) => setNewPhone(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3">
-                <button
-                  type="button"
+                <Input
+                  label="Guardian Name"
+                  value={newGuardian}
+                  onChange={(e) => setNewGuardian(e.target.value)}
+                  required
+                  fullWidth
+                />
+                <Input
+                  label="Guardian Phone"
+                  type="tel"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  required
+                  fullWidth
+                />
+              </form>
+            </CardContent>
+            <CardFooter>
+              <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                <Button
+                  variant="secondary"
                   onClick={() => setShowAddStudent(false)}
-                  className="px-3 py-1.5 border border-slate-300 rounded hover:bg-slate-50"
+                  style={{ flex: 1 }}
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="px-4 py-1.5 bg-slate-900 text-white rounded font-medium hover:bg-slate-800"
+                  variant="primary"
+                  onClick={handleCreateStudent}
+                  style={{ flex: 1 }}
                 >
-                  Commit Registration
-                </button>
+                  Register Student
+                </Button>
               </div>
-            </form>
-          </div>
+            </CardFooter>
+          </Card>
         </div>
       )}
 
       {/* CSV Bulk Import Modal (REC-03) */}
       {showCsvImport && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-xl w-full shadow-xl space-y-4">
-            <h3 className="text-base font-bold text-slate-900">
-              Validated CSV Bulk Student Import (REC-03)
-            </h3>
-            <p className="text-xs text-slate-500">
-              Preview row-level validation errors before committing. Never partially corrupts valid records.
-            </p>
-
-            <div className="space-y-2 text-xs">
-              <label className="block font-medium text-slate-700">Paste CSV Contents</label>
-              <textarea
-                rows={5}
-                value={csvText}
-                onChange={(e) => setCsvText(e.target.value)}
-                className="w-full p-2.5 border border-slate-300 rounded font-mono text-[11px] focus:ring-1 focus:ring-slate-900"
-              />
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+          padding: '20px',
+        }}>
+          <Card style={{ maxWidth: '500px', width: '100%' }}>
+            <CardHeader style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <CardTitle>Validated CSV Bulk Student Import (REC-03)</CardTitle>
               <button
-                type="button"
-                onClick={handlePreviewCsv}
-                className="px-3 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded font-medium text-slate-800 text-xs"
-              >
-                Parse & Preview Rows
-              </button>
-            </div>
-
-            {parsedRows.length > 0 && (
-              <div className="border border-slate-200 rounded p-2 text-xs max-h-40 overflow-y-auto">
-                <p className="font-semibold text-slate-800 mb-1">
-                  Validated Rows ({parsedRows.length})
-                </p>
-                {parsedRows.map((r, i) => (
-                  <div key={i} className="py-1 border-b border-slate-100 flex items-center justify-between font-mono text-[11px]">
-                    <span>{r.admission_no} · {r.first_name} {r.last_name} ({r.gender})</span>
-                    <span className="text-emerald-700 font-sans text-[10px] font-medium">Valid</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCsvImport(false);
-                  setParsedRows([]);
+                onClick={() => setShowCsvImport(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s ease',
                 }}
-                className="px-3 py-1.5 border border-slate-300 rounded hover:bg-slate-50 text-xs"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                  e.currentTarget.style.color = '#94a3b8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.color = '#64748b';
+                }}
               >
-                Close
+                <X size={18} />
               </button>
-              {parsedRows.length > 0 && (
-                <button
+            </CardHeader>
+            <CardContent>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.5', margin: 0 }}>
+                  Preview row-level validation errors before committing. Never partially corrupts valid records.
+                </p>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#94a3b8', marginBottom: '10px', lineHeight: '1.5', letterSpacing: '0.01em' }}>
+                    Paste CSV Contents
+                  </label>
+                  <textarea
+                    rows={5}
+                    value={csvText}
+                    onChange={(e) => setCsvText(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-muted)',
+                      background: 'rgba(255,255,255,0.04)',
+                      color: 'var(--text-primary)',
+                      fontSize: '13px',
+                      fontFamily: 'JetBrains Mono, monospace',
+                      lineHeight: '1.5',
+                      letterSpacing: '0.01em',
+                      resize: 'vertical',
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handlePreviewCsv}
+                    variant="secondary"
+                    style={{ marginTop: '12px', width: '100%' }}
+                  >
+                    Parse & Preview Rows
+                  </Button>
+                </div>
+                {parsedRows.length > 0 && (
+                  <div style={{
+                    border: '1px solid var(--border-muted)',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    background: 'rgba(255,255,255,0.02)',
+                  }}>
+                    <p style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0', marginBottom: '12px', margin: '0 0 12px 0' }}>
+                      Validated Rows ({parsedRows.length})
+                    </p>
+                    {parsedRows.map((r, i) => (
+                      <div key={i} style={{
+                        padding: '8px 0',
+                        borderBottom: '1px solid rgba(255,255,255,0.05)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '12px',
+                        fontFamily: 'JetBrains Mono, monospace',
+                        color: '#94a3b8',
+                      }}>
+                        <span>{r.admission_no} · {r.first_name} {r.last_name} ({r.gender})</span>
+                        <span style={{ color: '#34d399', fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: 500 }}>Valid</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <div style={{ display: 'flex', gap: '12px', width: '100%', justifyContent: 'flex-end' }}>
+                <Button
                   type="button"
-                  onClick={handleCommitCsv}
-                  className="px-4 py-1.5 bg-slate-900 text-white rounded font-medium hover:bg-slate-800 text-xs"
+                  onClick={() => {
+                    setShowCsvImport(false);
+                    setParsedRows([]);
+                  }}
+                  variant="secondary"
                 >
-                  Commit Import ({parsedRows.length} students)
-                </button>
-              )}
-            </div>
-          </div>
+                  Close
+                </Button>
+                {parsedRows.length > 0 && (
+                  <Button
+                    type="button"
+                    onClick={handleCommitCsv}
+                    variant="primary"
+                  >
+                    Commit Import ({parsedRows.length} students)
+                  </Button>
+                )}
+              </div>
+            </CardFooter>
+          </Card>
         </div>
       )}
     </div>

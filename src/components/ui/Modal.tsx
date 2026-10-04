@@ -61,8 +61,7 @@ export const Modal: React.FC<ModalProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         padding: '24px',
-        background: 'rgba(0, 0, 0, 0.7)',
-        backdropFilter: 'blur(4px)',
+        background: 'rgba(0, 0, 0, 0.5)',
         animation: 'fadeIn 0.2s ease',
       }}
       onClick={(e) => {
@@ -76,12 +75,10 @@ export const Modal: React.FC<ModalProps> = ({
         style={{
           width: '100%',
           ...sizeStyles[size],
-          background: 'rgba(15, 18, 28, 0.95)',
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          border: '1px solid rgba(99, 102, 241, 0.22)',
+          background: '#fff',
+          border: '1px solid #e2e8f0',
           borderRadius: '16px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.65), 0 0 40px rgba(99, 102, 241, 0.1)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
           animation: 'fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           maxHeight: '90vh',
           overflow: 'auto',
@@ -95,15 +92,15 @@ export const Modal: React.FC<ModalProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '20px 24px',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+              borderBottom: '1px solid #e2e8f0',
             }}
           >
             {title && (
               <h3
                 style={{
                   fontSize: '16px',
-                  fontWeight: 700,
-                  color: '#f1f5f9',
+                  fontWeight: 600,
+                  color: '#0f172a',
                   margin: 0,
                 }}
               >
@@ -116,7 +113,7 @@ export const Modal: React.FC<ModalProps> = ({
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#64748b',
+                  color: '#9ca3af',
                   cursor: 'pointer',
                   padding: '4px',
                   borderRadius: '6px',
@@ -126,12 +123,12 @@ export const Modal: React.FC<ModalProps> = ({
                   transition: 'all 0.15s ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-                  e.currentTarget.style.color = '#f1f5f9';
+                  e.currentTarget.style.background = '#f1f5f9';
+                  e.currentTarget.style.color = '#374151';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#64748b';
+                  e.currentTarget.style.color = '#9ca3af';
                 }}
               >
                 <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -160,7 +157,7 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({ children, style }) => 
       justifyContent: 'flex-end',
       gap: '12px',
       paddingTop: '20px',
-      borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+      borderTop: '1px solid #e2e8f0',
       ...style,
     }}
   >

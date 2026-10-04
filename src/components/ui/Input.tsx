@@ -3,6 +3,7 @@ import React from 'react';
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  helper?: string;
   icon?: React.ReactNode;
   rightElement?: React.ReactNode;
   fullWidth?: boolean;
@@ -11,19 +12,24 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export const Input: React.FC<InputProps> = ({
   label,
   error,
+  helper,
   icon,
   rightElement,
   fullWidth = false,
   style,
+  onFocus,
+  onBlur,
   ...props
 }) => {
   const baseStyles = {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid var(--border-muted)',
+    background: '#fff',
+    border: '1px solid #cbd5e1',
     borderRadius: '8px',
-    color: 'var(--text-primary)',
-    padding: icon ? '8px 12px 8px 40px' : '8px 12px',
-    fontSize: '13px',
+    color: '#0f172a',
+    padding: icon ? '10px 14px 10px 44px' : '10px 14px',
+    fontSize: '14px',
+    lineHeight: '1.5',
+    letterSpacing: '0.01em',
     transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
     width: fullWidth ? '100%' : 'auto',
     fontFamily: 'inherit',
@@ -31,7 +37,7 @@ export const Input: React.FC<InputProps> = ({
   };
 
   const errorStyles = error ? {
-    borderColor: 'rgba(239, 68, 68, 0.5)',
+    borderColor: '#ef4444',
   } : {};
 
   return (
@@ -40,11 +46,12 @@ export const Input: React.FC<InputProps> = ({
         <label
           style={{
             display: 'block',
-            fontSize: '12px',
-            fontWeight: 600,
-            color: '#94a3b8',
-            marginBottom: '6px',
-            letterSpacing: '0.02em',
+            fontSize: '13px',
+            fontWeight: 500,
+            color: '#374151',
+            marginBottom: '10px',
+            lineHeight: '1.5',
+            letterSpacing: '0.01em',
           }}
         >
           {label}
@@ -55,10 +62,10 @@ export const Input: React.FC<InputProps> = ({
           <div
             style={{
               position: 'absolute',
-              left: '12px',
+              left: '16px',
               top: '50%',
               transform: 'translateY(-50%)',
-              color: '#64748b',
+              color: '#94a3b8',
               pointerEvents: 'none',
             }}
           >
@@ -73,17 +80,17 @@ export const Input: React.FC<InputProps> = ({
           }}
           onFocus={(e) => {
             Object.assign(e.currentTarget.style, {
-              borderColor: 'var(--brand-500)',
+              borderColor: '#6366f1',
               boxShadow: '0 0 0 3px rgba(99,102,241,0.15)',
-              background: 'rgba(255,255,255,0.06)',
             });
+            onFocus?.(e);
           }}
           onBlur={(e) => {
             Object.assign(e.currentTarget.style, {
-              borderColor: error ? 'rgba(239, 68, 68, 0.5)' : 'var(--border-muted)',
+              borderColor: error ? '#ef4444' : '#cbd5e1',
               boxShadow: 'none',
-              background: 'rgba(255,255,255,0.04)',
             });
+            onBlur?.(e);
           }}
           {...props}
         />
@@ -91,7 +98,7 @@ export const Input: React.FC<InputProps> = ({
           <div
             style={{
               position: 'absolute',
-              right: '12px',
+              right: '16px',
               top: '50%',
               transform: 'translateY(-50%)',
             }}
@@ -100,8 +107,13 @@ export const Input: React.FC<InputProps> = ({
           </div>
         )}
       </div>
+      {helper && !error && (
+        <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+          {helper}
+        </p>
+      )}
       {error && (
-        <p style={{ fontSize: '11px', color: '#fca5a5', marginTop: '4px' }}>
+        <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '8px', lineHeight: '1.4' }}>
           {error}
         </p>
       )}
@@ -121,15 +133,19 @@ export const Select: React.FC<SelectProps> = ({
   fullWidth = false,
   style,
   children,
+  onFocus,
+  onBlur,
   ...props
 }) => {
   const baseStyles = {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid var(--border-muted)',
+    background: '#fff',
+    border: '1px solid #cbd5e1',
     borderRadius: '8px',
-    color: 'var(--text-primary)',
-    padding: '8px 12px',
-    fontSize: '13px',
+    color: '#0f172a',
+    padding: '10px 14px',
+    fontSize: '14px',
+    lineHeight: '1.5',
+    letterSpacing: '0.01em',
     transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
     width: fullWidth ? '100%' : 'auto',
     fontFamily: 'inherit',
@@ -138,7 +154,7 @@ export const Select: React.FC<SelectProps> = ({
   };
 
   const errorStyles = error ? {
-    borderColor: 'rgba(239, 68, 68, 0.5)',
+    borderColor: '#ef4444',
   } : {};
 
   return (
@@ -147,11 +163,12 @@ export const Select: React.FC<SelectProps> = ({
         <label
           style={{
             display: 'block',
-            fontSize: '12px',
-            fontWeight: 600,
-            color: '#94a3b8',
-            marginBottom: '6px',
-            letterSpacing: '0.02em',
+            fontSize: '13px',
+            fontWeight: 500,
+            color: '#374151',
+            marginBottom: '10px',
+            lineHeight: '1.5',
+            letterSpacing: '0.01em',
           }}
         >
           {label}
@@ -165,24 +182,24 @@ export const Select: React.FC<SelectProps> = ({
         }}
         onFocus={(e) => {
           Object.assign(e.currentTarget.style, {
-            borderColor: 'var(--brand-500)',
+            borderColor: '#6366f1',
             boxShadow: '0 0 0 3px rgba(99,102,241,0.15)',
-            background: 'rgba(255,255,255,0.06)',
           });
+          onFocus?.(e);
         }}
         onBlur={(e) => {
           Object.assign(e.currentTarget.style, {
-            borderColor: error ? 'rgba(239, 68, 68, 0.5)' : 'var(--border-muted)',
+            borderColor: error ? '#ef4444' : '#cbd5e1',
             boxShadow: 'none',
-            background: 'rgba(255,255,255,0.04)',
           });
+          onBlur?.(e);
         }}
         {...props}
       >
         {children}
       </select>
       {error && (
-        <p style={{ fontSize: '11px', color: '#fca5a5', marginTop: '4px' }}>
+        <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '8px', lineHeight: '1.4' }}>
           {error}
         </p>
       )}
@@ -201,15 +218,19 @@ export const Textarea: React.FC<TextareaProps> = ({
   error,
   fullWidth = false,
   style,
+  onFocus,
+  onBlur,
   ...props
 }) => {
   const baseStyles = {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid var(--border-muted)',
+    background: '#fff',
+    border: '1px solid #cbd5e1',
     borderRadius: '8px',
-    color: 'var(--text-primary)',
-    padding: '8px 12px',
-    fontSize: '13px',
+    color: '#0f172a',
+    padding: '10px 14px',
+    fontSize: '14px',
+    lineHeight: '1.6',
+    letterSpacing: '0.01em',
     transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
     width: fullWidth ? '100%' : 'auto',
     fontFamily: 'inherit',
@@ -218,7 +239,7 @@ export const Textarea: React.FC<TextareaProps> = ({
   };
 
   const errorStyles = error ? {
-    borderColor: 'rgba(239, 68, 68, 0.5)',
+    borderColor: '#ef4444',
   } : {};
 
   return (
@@ -227,11 +248,12 @@ export const Textarea: React.FC<TextareaProps> = ({
         <label
           style={{
             display: 'block',
-            fontSize: '12px',
-            fontWeight: 600,
-            color: '#94a3b8',
-            marginBottom: '6px',
-            letterSpacing: '0.02em',
+            fontSize: '13px',
+            fontWeight: 500,
+            color: '#374151',
+            marginBottom: '10px',
+            lineHeight: '1.5',
+            letterSpacing: '0.01em',
           }}
         >
           {label}
@@ -245,22 +267,22 @@ export const Textarea: React.FC<TextareaProps> = ({
         }}
         onFocus={(e) => {
           Object.assign(e.currentTarget.style, {
-            borderColor: 'var(--brand-500)',
+            borderColor: '#6366f1',
             boxShadow: '0 0 0 3px rgba(99,102,241,0.15)',
-            background: 'rgba(255,255,255,0.06)',
           });
+          onFocus?.(e);
         }}
         onBlur={(e) => {
           Object.assign(e.currentTarget.style, {
-            borderColor: error ? 'rgba(239, 68, 68, 0.5)' : 'var(--border-muted)',
+            borderColor: error ? '#ef4444' : '#cbd5e1',
             boxShadow: 'none',
-            background: 'rgba(255,255,255,0.04)',
           });
+          onBlur?.(e);
         }}
         {...props}
       />
       {error && (
-        <p style={{ fontSize: '11px', color: '#fca5a5', marginTop: '4px' }}>
+        <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '8px', lineHeight: '1.4' }}>
           {error}
         </p>
       )}

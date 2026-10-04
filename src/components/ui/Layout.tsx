@@ -91,15 +91,15 @@ interface SectionProps {
 }
 
 export const Section: React.FC<SectionProps> = ({ children, title, description, actions, style }) => (
-  <section style={{ marginBottom: '28px', ...style }}>
+  <section style={{ marginBottom: '32px', ...style }}>
     {(title || description || actions) && (
       <div
         style={{
           display: 'flex',
           alignItems: 'flex-start',
           justifyContent: 'space-between',
-          gap: '16px',
-          marginBottom: '16px',
+          gap: '20px',
+          marginBottom: '20px',
         }}
       >
         <div>
@@ -107,17 +107,18 @@ export const Section: React.FC<SectionProps> = ({ children, title, description, 
             <h2
               style={{
                 fontSize: '18px',
-                fontWeight: 800,
-                letterSpacing: '-0.03em',
-                color: '#f1f5f9',
-                margin: '0 0 4px',
+                fontWeight: 700,
+                letterSpacing: '0.01em',
+                color: '#0f172a',
+                margin: '0 0 6px',
+                lineHeight: '1.4',
               }}
             >
               {title}
             </h2>
           )}
           {description && (
-            <p style={{ fontSize: '13px', color: '#374151', margin: 0 }}>{description}</p>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.6', letterSpacing: '0.01em' }}>{description}</p>
           )}
         </div>
         {actions && <div style={{ flexShrink: 0 }}>{actions}</div>}
@@ -144,8 +145,8 @@ export const Divider: React.FC<DividerProps> = ({ style }) => (
   <div
     style={{
       height: '1px',
-      background: 'rgba(255,255,255,0.06)',
-      margin: '16px 0',
+      background: '#e2e8f0',
+      margin: '24px 0',
       ...style,
     }}
   />

@@ -33,7 +33,7 @@ function LoadingScreen() {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'radial-gradient(ellipse at 50% 60%, rgba(99,102,241,0.08), transparent 60%), #0b0d14',
+      background: 'linear-gradient(135deg, #eef2ff, #f1f5f9)',
       gap: '24px',
     }}>
       {/* Animated logo circle */}
@@ -42,23 +42,23 @@ function LoadingScreen() {
           position: 'absolute',
           inset: 0,
           borderRadius: '50%',
-          border: '2px solid rgba(99,102,241,0.15)',
-          borderTopColor: '#6366f1',
+          border: '2px solid #c7d2fe',
+          borderTopColor: '#4f46e5',
           animation: 'spin-smooth 0.85s linear infinite',
         }} />
         <div style={{
           position: 'absolute',
           inset: '10px',
           borderRadius: '50%',
-          border: '2px solid rgba(168,85,247,0.15)',
-          borderBottomColor: '#a855f7',
+          border: '2px solid #ddd6fe',
+          borderBottomColor: '#7c3aed',
           animation: 'spin-smooth 1.2s linear infinite reverse',
         }} />
         <div style={{
           position: 'absolute',
           inset: '22px',
           borderRadius: '50%',
-          background: 'rgba(99,102,241,0.2)',
+          background: 'rgba(99,102,241,0.15)',
         }} />
       </div>
 
@@ -66,17 +66,14 @@ function LoadingScreen() {
         <h2 style={{
           fontSize: '18px',
           fontWeight: 700,
-          background: 'linear-gradient(135deg, #818cf8, #c084fc)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
+          color: '#4f46e5',
           letterSpacing: '-0.02em',
         }}>
           Apex IERMS
         </h2>
         <p style={{
           fontSize: '12px',
-          color: '#374151',
+          color: '#64748b',
           fontFamily: "'JetBrains Mono', monospace",
           marginTop: '6px',
           letterSpacing: '0.04em',
@@ -106,21 +103,83 @@ function LoadingScreen() {
 }
 
 /* ─────────────────────────────────────────────
-   Page Transition Wrapper
+   Navigation Progress Line
+───────────────────────────────────────────── */
+interface NavigationProgressProps { isNavigating: boolean; }
+function NavigationProgress({ isNavigating }: NavigationProgressProps) {
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: '2px',
+      zIndex: 9999,
+      pointerEvents: 'none',
+    }}>
+      <div style={{
+        height: '100%',
+        width: isNavigating ? '100%' : '0%',
+        background: 'linear-gradient(90deg, #6366f1, #a855f7, #6366f1)',
+        backgroundSize: '200% 100%',
+        transition: isNavigating ? 'width 0.4s ease-out' : 'width 0.2s ease-in',
+        animation: isNavigating ? 'shimmer 1s linear infinite' : 'none',
+      }} />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Page Transition Wrapper with Line Animation
 ───────────────────────────────────────────── */
 interface PageWrapperProps { children: React.ReactNode; tabKey: string; }
 function PageWrapper({ children, tabKey }: PageWrapperProps) {
   const [visible, setVisible] = useState(false);
-  useEffect(() => { setVisible(false); const id = requestAnimationFrame(() => setVisible(true)); return () => cancelAnimationFrame(id); }, [tabKey]);
+  const [lineVisible, setLineVisible] = useState(false);
+  
+  useEffect(() => {
+    setVisible(false);
+    setLineVisible(false);
+    
+    const id1 = requestAnimationFrame(() => {
+      setLineVisible(true);
+    });
+    const id2 = requestAnimationFrame(() => {
+      setTimeout(() => setVisible(true), 150);
+    });
+    
+    return () => {
+      cancelAnimationFrame(id1);
+      cancelAnimationFrame(id2);
+    };
+  }, [tabKey]);
+
   return (
     <div
       key={tabKey}
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(12px)',
-        transition: 'opacity 0.3s ease, transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+        transform: visible ? 'translateY(0) scale(1)' : 'translateY(16px) scale(0.98)',
+        transition: 'opacity 0.4s cubic-bezier(0.4,0,0.2,1), transform 0.4s cubic-bezier(0.34,1.56,0.64,1)',
       }}
     >
+      {/* Animated line at top */}
+      <div style={{
+        position: 'relative',
+        marginBottom: '20px',
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: lineVisible ? '100%' : '0%',
+          height: '2px',
+          background: 'linear-gradient(90deg, #6366f1, #a855f7)',
+          borderRadius: '100px',
+          transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
+          boxShadow: '0 0 12px rgba(99,102,241,0.4)',
+        }} />
+      </div>
       {children}
     </div>
   );
@@ -132,6 +191,34 @@ function PageWrapper({ children, tabKey }: PageWrapperProps) {
 function MainContent() {
   const { currentUser, currentRole, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Prevent duplicate navigation with animation
+  const handleNavigate = (tab: string) => {
+    if (tab === activeTab) return; // Prevent navigation to same tab
+    
+    if (navigationTimeoutRef.current) {
+      clearTimeout(navigationTimeoutRef.current);
+    }
+    
+    setIsNavigating(true);
+    setActiveTab(tab);
+    
+    navigationTimeoutRef.current = setTimeout(() => {
+      setIsNavigating(false);
+    }, 400);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Enforce role-based access control on tabs
   useEffect(() => {
@@ -168,7 +255,7 @@ function MainContent() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard':       return <AdminDashboard onNavigate={setActiveTab} />;
+      case 'dashboard':       return <AdminDashboard onNavigate={handleNavigate} />;
       case 'questions':       return <QuestionBank />;
       case 'exams':           return <ExamBuilder />;
       case 'grading':         return <GradingQueue />;
@@ -180,17 +267,28 @@ function MainContent() {
       case 'audit':           return <AuditLogsViewer />;
       case 'take-exam':       return <StudentDashboard />;
       case 'student-results': return <StudentDashboard />;
-      default:                return <AdminDashboard onNavigate={setActiveTab} />;
+      default:                return <AdminDashboard onNavigate={handleNavigate} />;
     }
   };
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-0)', overflow: 'hidden' }}>
-      <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc', overflow: 'hidden' }}>
+      <NavigationProgress isNavigating={isNavigating} />
+      <Header 
+        activeTab={activeTab} 
+        setActiveTab={handleNavigate}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
       <div style={{ flex: 1, display: 'flex', width: '100%', minHeight: 0, overflow: 'hidden' }}>
         {/* Full-height Sidebar */}
         <div style={{ display: 'flex', flexShrink: 0 }}>
-          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+          <Sidebar 
+            activeTab={activeTab} 
+            setActiveTab={handleNavigate}
+            isCollapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
         </div>
         {/* Full-width Responsive Main Container */}
         <main style={{
