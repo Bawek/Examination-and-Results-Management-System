@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api.ts';
 import { AuditLog } from '../../types/index.ts';
-import { ShieldCheck, Search, Filter, Clock, Eye } from 'lucide-react';
+import { ShieldCheck, Search, Eye } from 'lucide-react';
+import { Input, Badge, Modal, ModalFooter, Button } from '../ui';
 
 export const AuditLogsViewer: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -29,7 +30,7 @@ export const AuditLogsViewer: React.FC = () => {
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-indigo-700" />
-            <span>Immutable Audit Trail & Governance (ADM-01 to ADM-05)</span>
+            <span>Immutable Audit Trail &amp; Governance (ADM-01 to ADM-05)</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             Tamper-proof audit logs recording exam scheduling, mark submissions, result publications, and administrative overrides with documented reasons.
@@ -37,16 +38,12 @@ export const AuditLogsViewer: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Filter by action..."
-              value={actionFilter}
-              onChange={(e) => setActionFilter(e.target.value)}
-              className="pl-8 pr-3 py-1.5 border border-slate-300 rounded text-xs w-48 focus:outline-none focus:ring-1 focus:ring-slate-900"
-            />
-          </div>
+          <Input
+            icon={<Search size={14} />}
+            placeholder="Filter by action..."
+            value={actionFilter}
+            onChange={(e) => setActionFilter(e.target.value)}
+          />
         </div>
       </div>
 
@@ -75,9 +72,7 @@ export const AuditLogsViewer: React.FC = () => {
                   )}
                 </td>
                 <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
-                  <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[11px]">
-                    {log.action}
-                  </span>
+                  <Badge variant="muted">{log.action}</Badge>
                 </td>
                 <td className="py-2.5 px-3 text-slate-600 font-mono text-[11px]">
                   {log.entity_type} {log.entity_id ? `(#${log.entity_id})` : ''}
@@ -100,33 +95,30 @@ export const AuditLogsViewer: React.FC = () => {
         </table>
       </div>
 
-      {/* Detail JSON Modal */}
-      {selectedLog && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 font-mono">
-              Audit Event: {selectedLog.action}
-            </h3>
-            <div className="text-xs space-y-1.5 bg-slate-50 p-3 rounded border border-slate-200 font-mono">
+      {/* Detail Modal */}
+      <Modal
+        isOpen={!!selectedLog}
+        onClose={() => setSelectedLog(null)}
+        title={selectedLog ? `Audit Event: ${selectedLog.action}` : ''}
+        size="md"
+      >
+        {selectedLog && (
+          <>
+            <div style={{ fontSize: '12px', lineHeight: '1.6', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', fontFamily: 'monospace', marginBottom: '16px' }}>
               <div>Actor: {selectedLog.full_name} ({selectedLog.role})</div>
               <div>Entity: {selectedLog.entity_type} #{selectedLog.entity_id}</div>
               <div>Timestamp: {selectedLog.created_at}</div>
               <div>Reason: {selectedLog.reason}</div>
             </div>
-            <pre className="p-3 bg-slate-900 text-slate-200 rounded text-[11px] overflow-x-auto max-h-56">
+            <pre style={{ padding: '12px', background: '#0f172a', color: '#e2e8f0', borderRadius: '8px', fontSize: '11px', overflowX: 'auto', maxHeight: '224px' }}>
               {JSON.stringify(selectedLog.details, null, 2)}
             </pre>
-            <div className="flex justify-end">
-              <button
-                onClick={() => setSelectedLog(null)}
-                className="px-3 py-1.5 bg-slate-900 text-white rounded text-xs"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            <ModalFooter>
+              <Button variant="secondary" onClick={() => setSelectedLog(null)}>Close</Button>
+            </ModalFooter>
+          </>
+        )}
+      </Modal>
     </div>
   );
 };

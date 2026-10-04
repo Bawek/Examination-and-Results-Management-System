@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api.ts';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge, Grid, Flex } from '../ui';
-import type { BadgeProps } from '../ui';
 import {
   Users, FileText, CheckCircle2, ShieldAlert, Clock,
   ArrowUpRight, GraduationCap, TrendingUp, Activity,
@@ -25,41 +24,29 @@ interface StatCardProps {
 function StatCard({ label, value, sub, icon: Icon, color, glowColor, trend }: StatCardProps) {
   const [hovered, setHovered] = useState(false);
   return (
-    <Card
-      hoverable
-      glow={hovered}
-      padding="md"
-      style={{
-        cursor: 'default',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
+    <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Background gradient blob */}
-      <div style={{
-        position: 'absolute',
-        bottom: '-20px',
-        right: '-20px',
-        width: '100px',
-        height: '100px',
-        borderRadius: '50%',
-        background: `radial-gradient(circle, ${glowColor}18, transparent 70%)`,
-        pointerEvents: 'none',
-        transition: 'opacity 0.3s ease',
-        opacity: hovered ? 1 : 0.5,
-      }} />
-
+      <Card
+        hoverable
+        glow={hovered}
+        padding="md"
+        style={{
+          cursor: 'default',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
       <Flex align="flex-start" justify="space-between">
         <div style={{ flex: 1 }}>
-          <p style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <p style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             {label}
           </p>
           <p style={{
             fontSize: '30px',
             fontWeight: 800,
-            color: '#f1f5f9',
+            color: '#0f172a',
             fontFamily: "'JetBrains Mono', monospace",
             lineHeight: 1.1,
             marginTop: '8px',
@@ -92,14 +79,15 @@ function StatCard({ label, value, sub, icon: Icon, color, glowColor, trend }: St
         </div>
       </Flex>
     </Card>
+    </div>
   );
 }
 
 function SkeletonCard() {
   return (
     <div style={{
-      background: 'rgba(17,24,39,0.6)',
-      border: '1px solid rgba(255,255,255,0.05)',
+      background: '#f8fafc',
+      border: '1px solid #e2e8f0',
       borderRadius: '14px',
       padding: '20px',
     }}>
@@ -111,7 +99,7 @@ function SkeletonCard() {
 }
 
 function ExamRow({ ex }: { ex: any }) {
-  const statusMap: Record<string, BadgeProps['variant']> = {
+  const statusMap: Record<string, 'success' | 'info' | 'muted' | 'warning' | 'brand'> = {
     published: 'success',
     results_released: 'info',
     closed: 'muted',
@@ -126,23 +114,23 @@ function ExamRow({ ex }: { ex: any }) {
       alignItems: 'center',
       justifyContent: 'space-between',
       padding: '12px 0',
-      borderBottom: '1px solid rgba(255,255,255,0.04)',
+      borderBottom: '1px solid #f1f5f9',
       transition: 'background 0.15s ease',
     }}>
       <div style={{ minWidth: 0 }}>
-        <p style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <p style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {ex.title}
         </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#4b5563' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#6b7280' }}>
           <span>{ex.subject_name}</span>
-          <span style={{ color: '#1f2937' }}>·</span>
+          <span style={{ color: '#d1d5db' }}>·</span>
           <span>{ex.class_name} ({ex.section_name})</span>
-          <span style={{ color: '#1f2937' }}>·</span>
+          <span style={{ color: '#d1d5db' }}>·</span>
           <span style={{ fontFamily: 'monospace' }}>{ex.duration_minutes}m / {ex.total_marks}pts</span>
         </div>
       </div>
       <Badge variant={statusVariant} style={{ marginLeft: '16px', flexShrink: 0 }}>
-        {ex.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+        {ex.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
       </Badge>
     </div>
   );
@@ -152,17 +140,17 @@ function AuditRow({ log }: { log: any }) {
   return (
     <div style={{
       padding: '10px 0',
-      borderBottom: '1px solid rgba(255,255,255,0.03)',
+      borderBottom: '1px solid #f1f5f9',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px' }}>
-        <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', fontFamily: 'monospace' }}>
+        <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151', fontFamily: 'monospace' }}>
           {log.action}
         </span>
-        <span style={{ fontSize: '10px', color: '#374151', fontFamily: 'monospace' }}>
+        <span style={{ fontSize: '10px', color: '#9ca3af', fontFamily: 'monospace' }}>
           {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>
-      <p style={{ fontSize: '11px', color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <p style={{ fontSize: '11px', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {log.reason || log.entity_type} · by {log.user_name || 'System'}
       </p>
     </div>
@@ -247,14 +235,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
             fontSize: '22px',
             fontWeight: 800,
             letterSpacing: '-0.03em',
-            background: 'linear-gradient(135deg, #f1f5f9, #94a3b8)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
+            color: '#0f172a',
           }}>
             System Administration
           </h1>
-          <p style={{ fontSize: '13px', color: '#374151', marginTop: '4px' }}>
+          <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>
             Integrated Examination Management (OEMS) &amp; Student Result Management (SRMS)
           </p>
         </div>
@@ -276,12 +261,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       </div>
 
       {/* ── KPI Stats Grid ── */}
-      <Grid columns={3} gap={14} className="stagger animate-fade-in-up">
-        {loading
-          ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-          : statCards.map((card) => <StatCard key={card.label} {...card} />)
-        }
-      </Grid>
+      <div className="stagger animate-fade-in-up">
+        <Grid columns={3} gap={14}>
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+            : statCards.map((card) => <StatCard key={card.label} {...card} />)
+          }
+        </Grid>
+      </div>
 
       {/* ── Main Content Grid ── */}
       <Grid columns="1fr 340px" gap={16}>
@@ -315,9 +302,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
             </div>
           ) : stats?.recentExams?.length === 0 ? (
             <div style={{ padding: '40px 0', textAlign: 'center' }}>
-              <FileText size={32} style={{ color: '#1f2937', margin: '0 auto 12px' }} />
-              <p style={{ fontSize: '13px', color: '#374151' }}>No examinations found.</p>
-              <p style={{ fontSize: '11px', color: '#1f2937', marginTop: '4px' }}>Create your first exam to get started.</p>
+              <FileText size={32} style={{ color: '#cbd5e1', margin: '0 auto 12px' }} />
+              <p style={{ fontSize: '13px', color: '#6b7280' }}>No examinations found.</p>
+              <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>Create your first exam to get started.</p>
             </div>
           ) : (
             stats?.recentExams?.map((ex: any) => <ExamRow key={ex.id} ex={ex} />)
@@ -352,7 +339,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
               ))}
             </div>
           ) : stats?.recentLogs?.length === 0 ? (
-            <p style={{ fontSize: '12px', color: '#374151', textAlign: 'center', padding: '32px 0' }}>
+            <p style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', padding: '32px 0' }}>
               No audit events recorded.
             </p>
           ) : (
@@ -379,21 +366,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
               gap: '12px',
               padding: '14px 16px',
               borderRadius: '12px',
-              background: 'rgba(17,24,39,0.6)',
-              border: '1px solid rgba(255,255,255,0.05)',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
               textAlign: 'left',
               justifyContent: 'flex-start',
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLElement;
-              el.style.background = 'rgba(17,24,39,0.9)';
-              el.style.borderColor = `${color}30`;
+              el.style.background = '#f1f5f9';
+              el.style.borderColor = `${color}40`;
               el.style.transform = 'translateY(-1px)';
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLElement;
-              el.style.background = 'rgba(17,24,39,0.6)';
-              el.style.borderColor = 'rgba(255,255,255,0.05)';
+              el.style.background = '#f8fafc';
+              el.style.borderColor = '#e2e8f0';
               el.style.transform = 'translateY(0)';
             }}
           >
@@ -405,8 +392,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
               <Icon size={16} style={{ color }} />
             </div>
             <div>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>{label}</div>
-              <div style={{ fontSize: '10px', color: '#374151', marginTop: '1px' }}>{sub}</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#374151' }}>{label}</div>
+              <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '1px' }}>{sub}</div>
             </div>
           </Button>
         ))}

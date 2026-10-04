@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api.ts';
 import { SchoolSettings, GradingScale } from '../../types/index.ts';
-import { Save, Check, Shield } from 'lucide-react';
+import { Save, Check } from 'lucide-react';
+import { Button, Input, Select } from '../ui';
 
 export const InstitutionSetup: React.FC = () => {
   const [settings, setSettings] = useState<Partial<SchoolSettings>>({});
@@ -42,14 +43,14 @@ export const InstitutionSetup: React.FC = () => {
       <div className="pb-4 border-b border-slate-200 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900">
-            Institution & Assessment Policies (ACD-01, ACD-09)
+            Institution &amp; Assessment Policies (ACD-01, ACD-09)
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             Governs academic identity, grading scales, pass thresholds, rounding rules, and ranking logic.
           </p>
         </div>
         {savedMessage && (
-          <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-md border border-emerald-200">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
             <Check className="w-3.5 h-3.5" />
             <span>{savedMessage}</span>
           </div>
@@ -62,55 +63,47 @@ export const InstitutionSetup: React.FC = () => {
           <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
             <span>Institution Profile</span>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">Institution Legal Name</label>
-              <input
-                type="text"
-                value={settings.institution_name || ''}
-                onChange={(e) => setSettings({ ...settings, institution_name: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900"
-                required
-              />
-            </div>
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">Timezone (Server Authoritative)</label>
-              <select
-                value={settings.timezone || 'UTC'}
-                onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900"
-              >
-                <option value="America/New_York">America/New_York (EST / EDT)</option>
-                <option value="UTC">UTC (Coordinated Universal Time)</option>
-                <option value="Africa/Addis_Ababa">Africa/Addis_Ababa (EAT)</option>
-                <option value="Europe/London">Europe/London (GMT / BST)</option>
-              </select>
-            </div>
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">Official Contact Email</label>
-              <input
-                type="email"
-                value={settings.contact_email || ''}
-                onChange={(e) => setSettings({ ...settings, contact_email: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900"
-              />
-            </div>
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">Official Telephone</label>
-              <input
-                type="text"
-                value={settings.contact_phone || ''}
-                onChange={(e) => setSettings({ ...settings, contact_phone: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900"
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Institution Legal Name"
+              type="text"
+              value={settings.institution_name || ''}
+              onChange={(e) => setSettings({ ...settings, institution_name: e.target.value })}
+              fullWidth
+              required
+            />
+            <Select
+              label="Timezone (Server Authoritative)"
+              value={settings.timezone || 'UTC'}
+              onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
+              fullWidth
+            >
+              <option value="America/New_York">America/New_York (EST / EDT)</option>
+              <option value="UTC">UTC (Coordinated Universal Time)</option>
+              <option value="Africa/Addis_Ababa">Africa/Addis_Ababa (EAT)</option>
+              <option value="Europe/London">Europe/London (GMT / BST)</option>
+            </Select>
+            <Input
+              label="Official Contact Email"
+              type="email"
+              value={settings.contact_email || ''}
+              onChange={(e) => setSettings({ ...settings, contact_email: e.target.value })}
+              fullWidth
+            />
+            <Input
+              label="Official Telephone"
+              type="text"
+              value={settings.contact_phone || ''}
+              onChange={(e) => setSettings({ ...settings, contact_phone: e.target.value })}
+              fullWidth
+            />
             <div className="md:col-span-2">
-              <label className="block font-medium text-slate-700 mb-1">Campus Address</label>
-              <input
+              <Input
+                label="Campus Address"
                 type="text"
                 value={settings.address || ''}
                 onChange={(e) => setSettings({ ...settings, address: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900"
+                fullWidth
               />
             </div>
           </div>
@@ -121,35 +114,35 @@ export const InstitutionSetup: React.FC = () => {
           <h2 className="text-sm font-semibold text-slate-900">
             Calculation Engine Rules (RES-01 to RES-10, 8.5)
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block font-medium text-slate-700 mb-1">Pass Threshold (%)</label>
-              <input
+              <Input
+                label="Pass Threshold (%)"
                 type="number"
                 step="0.01"
                 min="0"
                 max="100"
                 value={settings.pass_percentage ?? 50.0}
                 onChange={(e) => setSettings({ ...settings, pass_percentage: parseFloat(e.target.value) })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono tabular-nums"
+                fullWidth
               />
               <p className="text-[10px] text-slate-500 mt-1">Minimum subject / overall score to award Pass</p>
             </div>
             <div>
-              <label className="block font-medium text-slate-700 mb-1">Rounding Decimal Places</label>
-              <input
+              <Input
+                label="Rounding Decimal Places"
                 type="number"
                 min="0"
                 max="4"
                 value={settings.rounding_decimals ?? 2}
                 onChange={(e) => setSettings({ ...settings, rounding_decimals: parseInt(e.target.value, 10) })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono tabular-nums"
+                fullWidth
               />
               <p className="text-[10px] text-slate-500 mt-1">Stored consistently as DECIMAL(5,2)</p>
             </div>
             <div>
-              <label className="block font-medium text-slate-700 mb-1">Student Ranking</label>
-              <div className="mt-2 flex items-center gap-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Student Ranking</label>
+              <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id="rankToggle"
@@ -157,7 +150,7 @@ export const InstitutionSetup: React.FC = () => {
                   onChange={(e) => setSettings({ ...settings, ranking_enabled: e.target.checked })}
                   className="rounded text-slate-900 focus:ring-slate-900"
                 />
-                <label htmlFor="rankToggle" className="text-xs text-slate-700">
+                <label htmlFor="rankToggle" className="text-sm text-slate-700 flex items-center gap-2">
                   Compute term class ranks (with tie-handling)
                 </label>
               </div>
@@ -169,7 +162,7 @@ export const InstitutionSetup: React.FC = () => {
         <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">
-              Active Grading Scale & Grade Points (ACD-09)
+              Active Grading Scale &amp; Grade Points (ACD-09)
             </h2>
             <span className="text-[11px] text-slate-500">Standard Academic 4.0 Scale</span>
           </div>
@@ -208,15 +201,15 @@ export const InstitutionSetup: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <button
+        <div className="flex justify-end pt-4 border-t border-slate-200">
+          <Button
             type="submit"
-            disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-xs font-semibold shadow-sm transition-colors"
+            variant="primary"
+            loading={saving}
+            icon={<Save size={14} />}
           >
-            <Save className="w-3.5 h-3.5" />
-            <span>{saving ? 'Saving...' : 'Save System Configuration'}</span>
-          </button>
+            Save System Configuration
+          </Button>
         </div>
       </form>
     </div>

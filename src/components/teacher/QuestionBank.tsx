@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api.ts';
 import { Question, Subject } from '../../types/index.ts';
-import { Plus, HelpCircle, CheckCircle, Tag, Filter, FileText } from 'lucide-react';
+import { Plus, Filter } from 'lucide-react';
+import { Button, Select, Badge, Modal, ModalFooter, Input, Textarea } from '../ui';
 
 export const QuestionBank: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -9,7 +10,6 @@ export const QuestionBank: React.FC = () => {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
 
-  // New Question Modal State
   const [showAddModal, setShowAddModal] = useState(false);
   const [qSubjectId, setQSubjectId] = useState<number>(1);
   const [qType, setQType] = useState<Question['type']>('single_choice');
@@ -18,7 +18,6 @@ export const QuestionBank: React.FC = () => {
   const [qDifficulty, setQDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [qExplanation, setQExplanation] = useState('');
 
-  // Options for single_choice / multiple_select
   const [options, setOptions] = useState([
     { id: 'opt_1', text: '' },
     { id: 'opt_2', text: '' },
@@ -28,12 +27,8 @@ export const QuestionBank: React.FC = () => {
   const [singleCorrectOpt, setSingleCorrectOpt] = useState('opt_1');
   const [multiCorrectOpts, setMultiCorrectOpts] = useState<string[]>(['opt_1']);
   const [scoringPolicy, setScoringPolicy] = useState<'all_or_nothing' | 'partial_credit'>('partial_credit');
-
-  // Short answer
   const [acceptedAnswersText, setAcceptedAnswersText] = useState('');
-
-  // Essay Rubric criteria (QBK-06)
-  const [rubricCriteria, setRubricCriteria] = useState([
+  const [rubricCriteria] = useState([
     { criterion: 'Theoretical understanding and principles', maxMarks: 3 },
     { criterion: 'Step-by-step execution & calculation', maxMarks: 4 },
     { criterion: 'Clarity of presentation & notation', maxMarks: 1 },
@@ -42,10 +37,7 @@ export const QuestionBank: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [qList, sList] = await Promise.all([
-        api.getQuestions(),
-        api.getSubjects()
-      ]);
+      const [qList, sList] = await Promise.all([api.getQuestions(), api.getSubjects()]);
       setQuestions(qList);
       setSubjects(sList);
       if (sList[0]) setQSubjectId(sList[0].id);
@@ -54,9 +46,7 @@ export const QuestionBank: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const handleCreateQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,28 +113,26 @@ export const QuestionBank: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Subject Filter */}
           <div className="flex items-center gap-1.5 text-xs text-slate-600">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <select
+            <Select
               value={selectedSubjectId}
               onChange={(e) => setSelectedSubjectId(e.target.value)}
-              className="px-2.5 py-1.5 border border-slate-300 rounded text-xs bg-white focus:outline-none"
             >
               <option value="all">All Subjects ({questions.length})</option>
               {subjects.map(s => (
                 <option key={s.id} value={s.id}>{s.subject_name}</option>
               ))}
-            </select>
+            </Select>
           </div>
 
-          <button
+          <Button
+            variant="primary"
+            icon={<Plus size={14} />}
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 text-white rounded text-xs font-semibold hover:bg-slate-800 shadow-sm"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Create Question</span>
-          </button>
+            Create Question
+          </Button>
         </div>
       </div>
 
@@ -158,12 +146,16 @@ export const QuestionBank: React.FC = () => {
           filteredQuestions.map((q) => (
             <div key={q.id} className="bg-white border border-slate-200 rounded-lg p-5 space-y-3">
               <div className="flex items-center justify-between text-xs text-slate-500 pb-2 border-b border-slate-100">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-slate-900">{q.subject_name}</span>
                   <span>·</span>
-                  <span className="capitalize text-slate-700">{q.type.replace('_', ' ')}</span>
+                  <Badge variant="muted">{q.type.replace('_', ' ')}</Badge>
                   <span>·</span>
-                  <span className="capitalize">{q.difficulty} difficulty</span>
+                  <Badge
+                    variant={q.difficulty === 'easy' ? 'success' : q.difficulty === 'hard' ? 'danger' : 'warning'}
+                  >
+                    {q.difficulty}
+                  </Badge>
                   <span>·</span>
                   <span className="font-mono">v{q.version}</span>
                 </div>
@@ -172,37 +164,22 @@ export const QuestionBank: React.FC = () => {
                 </div>
               </div>
 
-              <div className="text-sm font-medium text-slate-900 leading-relaxed">
-                {q.prompt}
-              </div>
+              <div className="text-sm font-medium text-slate-900 leading-relaxed">{q.prompt}</div>
 
-              {/* Options display if applicable */}
               {Array.isArray(q.options) && q.options.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                   {q.options.map((opt: any) => {
                     const isCorrect = q.answer_keys?.correctOptionIds?.includes(opt.id);
                     return (
-                      <div
-                        key={opt.id}
-                        className={`p-2 rounded border flex items-center justify-between ${
-                          isCorrect
-                            ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950 font-medium'
-                            : 'bg-slate-50 border-slate-200 text-slate-700'
-                        }`}
-                      >
+                      <div key={opt.id} className={`p-2 rounded border flex items-center justify-between ${isCorrect ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950 font-medium' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
                         <span>{opt.text}</span>
-                        {isCorrect && (
-                          <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider font-mono">
-                            Answer Key
-                          </span>
-                        )}
+                        {isCorrect && <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider font-mono">Answer Key</span>}
                       </div>
                     );
                   })}
                 </div>
               )}
 
-              {/* Essay Rubric display */}
               {q.rubric?.criteria && (
                 <div className="bg-slate-50 p-3 rounded border border-slate-200 text-xs space-y-1">
                   <div className="font-semibold text-slate-800">Scoring Rubric Criteria:</div>
@@ -217,8 +194,7 @@ export const QuestionBank: React.FC = () => {
 
               {q.explanation && (
                 <div className="text-xs text-slate-500 bg-slate-50/50 p-2 rounded border border-dashed border-slate-200">
-                  <span className="font-medium text-slate-700">Explanation: </span>
-                  {q.explanation}
+                  <span className="font-medium text-slate-700">Explanation: </span>{q.explanation}
                 </div>
               )}
             </div>
@@ -226,160 +202,136 @@ export const QuestionBank: React.FC = () => {
         )}
       </div>
 
-      {/* Add Question Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl space-y-4 my-8">
-            <h3 className="text-base font-bold text-slate-900">Create Question Bank Item (QBK-01)</h3>
-            <form onSubmit={handleCreateQuestion} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Subject</label>
-                  <select
-                    value={qSubjectId}
-                    onChange={(e) => setQSubjectId(parseInt(e.target.value, 10))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded"
-                  >
-                    {subjects.map(s => <option key={s.id} value={s.id}>{s.subject_name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Question Type</label>
-                  <select
-                    value={qType}
-                    onChange={(e) => setQType(e.target.value as any)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded"
-                  >
-                    <option value="single_choice">Single Choice</option>
-                    <option value="multiple_select">Multiple Select (Partial Credit)</option>
-                    <option value="true_false">True / False</option>
-                    <option value="short_answer">Short Answer</option>
-                    <option value="essay">Essay / Long Answer (Rubric)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">Marks Allotted</label>
+      {/* Create Question Modal */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Create Question Bank Item"
+        size="xl"
+      >
+        <form onSubmit={handleCreateQuestion} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+            <Select
+              label="Subject"
+              value={qSubjectId}
+              onChange={(e) => setQSubjectId(parseInt(e.target.value, 10))}
+              fullWidth
+            >
+              {subjects.map(s => <option key={s.id} value={s.id}>{s.subject_name}</option>)}
+            </Select>
+            <Select
+              label="Question Type"
+              value={qType}
+              onChange={(e) => setQType(e.target.value as Question['type'])}
+              fullWidth
+            >
+              <option value="single_choice">Single Choice</option>
+              <option value="multiple_select">Multiple Select (Partial Credit)</option>
+              <option value="true_false">True / False</option>
+              <option value="short_answer">Short Answer</option>
+              <option value="essay">Essay / Long Answer (Rubric)</option>
+            </Select>
+            <Input
+              label="Marks Allotted"
+              type="number"
+              step="0.5"
+              value={qMarks}
+              onChange={(e) => setQMarks(e.target.value)}
+              fullWidth
+              required
+            />
+          </div>
+
+          <Select
+            label="Difficulty"
+            value={qDifficulty}
+            onChange={(e) => setQDifficulty(e.target.value as 'easy' | 'medium' | 'hard')}
+            fullWidth
+          >
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </Select>
+
+          <Textarea
+            label="Question Prompt"
+            rows={3}
+            value={qPrompt}
+            onChange={(e) => setQPrompt(e.target.value)}
+            placeholder="Enter the complete question prompt..."
+            fullWidth
+            required
+          />
+
+          {/* Options for single_choice / multiple_select */}
+          {(qType === 'single_choice' || qType === 'multiple_select') && (
+            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+                  Answer Choices &amp; Protected Correct Key
+                </label>
+                {qType === 'multiple_select' && (
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>Select all choices that are correct</span>
+                )}
+              </div>
+              {options.map((opt, idx) => (
+                <div key={opt.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <input
-                    type="number"
-                    step="0.5"
-                    value={qMarks}
-                    onChange={(e) => setQMarks(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded font-mono"
+                    type={qType === 'single_choice' ? 'radio' : 'checkbox'}
+                    name="correctChoice"
+                    checked={qType === 'single_choice' ? singleCorrectOpt === opt.id : multiCorrectOpts.includes(opt.id)}
+                    onChange={(e) => {
+                      if (qType === 'single_choice') {
+                        setSingleCorrectOpt(opt.id);
+                      } else {
+                        if (e.target.checked) setMultiCorrectOpts([...multiCorrectOpts, opt.id]);
+                        else setMultiCorrectOpts(multiCorrectOpts.filter(id => id !== opt.id));
+                      }
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder={`Option ${String.fromCharCode(65 + idx)}`}
+                    value={opt.text}
+                    onChange={(e) => {
+                      const updated = [...options];
+                      updated[idx].text = e.target.value;
+                      setOptions(updated);
+                    }}
+                    style={{ flex: 1, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', color: '#0f172a', outline: 'none' }}
                     required
                   />
                 </div>
-              </div>
+              ))}
+            </div>
+          )}
 
-              <div>
-                <label className="block font-medium text-slate-700 mb-1">Question Prompt</label>
-                <textarea
-                  rows={3}
-                  value={qPrompt}
-                  onChange={(e) => setQPrompt(e.target.value)}
-                  placeholder="Enter the complete question prompt..."
-                  className="w-full p-2.5 border border-slate-300 rounded focus:ring-1 focus:ring-slate-900"
-                  required
-                />
-              </div>
+          {qType === 'short_answer' && (
+            <Input
+              label="Accepted Answers (Comma separated exact matches)"
+              type="text"
+              placeholder="e.g. 42, forty-two, 42.0"
+              value={acceptedAnswersText}
+              onChange={(e) => setAcceptedAnswersText(e.target.value)}
+              fullWidth
+            />
+          )}
 
-              {/* Options for single_choice / multiple_select */}
-              {(qType === 'single_choice' || qType === 'multiple_select') && (
-                <div className="space-y-2 border-t border-slate-100 pt-3">
-                  <div className="flex items-center justify-between">
-                    <label className="font-semibold text-slate-800">
-                      Answer Choices & Protected Correct Key
-                    </label>
-                    {qType === 'multiple_select' && (
-                      <span className="text-[10px] text-slate-500">
-                        Select all choices that are correct
-                      </span>
-                    )}
-                  </div>
-                  {options.map((opt, idx) => (
-                    <div key={opt.id} className="flex items-center gap-2">
-                      <input
-                        type={qType === 'single_choice' ? 'radio' : 'checkbox'}
-                        name="correctChoice"
-                        checked={
-                          qType === 'single_choice'
-                            ? singleCorrectOpt === opt.id
-                            : multiCorrectOpts.includes(opt.id)
-                        }
-                        onChange={(e) => {
-                          if (qType === 'single_choice') {
-                            setSingleCorrectOpt(opt.id);
-                          } else {
-                            if (e.target.checked) setMultiCorrectOpts([...multiCorrectOpts, opt.id]);
-                            else setMultiCorrectOpts(multiCorrectOpts.filter(id => id !== opt.id));
-                          }
-                        }}
-                      />
-                      <input
-                        type="text"
-                        placeholder={`Option ${String.fromCharCode(65 + idx)}`}
-                        value={opt.text}
-                        onChange={(e) => {
-                          const updated = [...options];
-                          updated[idx].text = e.target.value;
-                          setOptions(updated);
-                        }}
-                        className="flex-1 px-3 py-1.5 border border-slate-300 rounded"
-                        required
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+          <Textarea
+            label="Explanatory Feedback (Visible after release)"
+            rows={2}
+            value={qExplanation}
+            onChange={(e) => setQExplanation(e.target.value)}
+            placeholder="Solution steps or reference rationale..."
+            fullWidth
+          />
 
-              {/* Short answer input */}
-              {qType === 'short_answer' && (
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">
-                    Accepted Answers (Comma separated exact matches)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 42, forty-two, 42.0"
-                    value={acceptedAnswersText}
-                    onChange={(e) => setAcceptedAnswersText(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded font-mono"
-                  />
-                </div>
-              )}
-
-              {/* Explanation */}
-              <div>
-                <label className="block font-medium text-slate-700 mb-1">
-                  Explanatory Feedback (Visible after release)
-                </label>
-                <textarea
-                  rows={2}
-                  value={qExplanation}
-                  onChange={(e) => setQExplanation(e.target.value)}
-                  placeholder="Solution steps or reference rationale..."
-                  className="w-full p-2 border border-slate-300 rounded"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-3 py-1.5 border border-slate-300 rounded hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-1.5 bg-slate-900 text-white rounded font-medium hover:bg-slate-800"
-                >
-                  Save to Question Bank
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+          <ModalFooter>
+            <Button variant="secondary" type="button" onClick={() => setShowAddModal(false)}>Cancel</Button>
+            <Button type="submit" variant="primary">Save to Bank</Button>
+          </ModalFooter>
+        </form>
+      </Modal>
     </div>
   );
 };
