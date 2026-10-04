@@ -140,7 +140,7 @@ export const PeopleManager: React.FC = () => {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex gap-1 border-b border-slate-200">
+      <div className="flex gap-1">
         <button
           onClick={() => setActiveTab('students')}
           className={activeTab === 'students'

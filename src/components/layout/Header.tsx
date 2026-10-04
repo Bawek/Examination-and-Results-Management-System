@@ -86,7 +86,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, sidebar
         background: 'rgba(255,255,255,0.95)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
-        borderBottom: '1px solid #e2e8f0',
         boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
       }}
     >

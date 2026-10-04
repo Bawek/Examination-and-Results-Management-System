@@ -91,7 +91,7 @@ export const AcademicMaster: React.FC = () => {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex gap-1 border-b border-slate-200 mb-6">
+      <div className="flex gap-1 mb-6">
         {tabItems.map((tab) => (
           <button
             key={tab.key}

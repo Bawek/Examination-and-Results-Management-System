@@ -135,23 +135,15 @@ function NavigationProgress({ isNavigating }: NavigationProgressProps) {
 interface PageWrapperProps { children: React.ReactNode; tabKey: string; }
 function PageWrapper({ children, tabKey }: PageWrapperProps) {
   const [visible, setVisible] = useState(false);
-  const [lineVisible, setLineVisible] = useState(false);
   
   useEffect(() => {
     setVisible(false);
-    setLineVisible(false);
     
-    const id1 = requestAnimationFrame(() => {
-      setLineVisible(true);
-    });
-    const id2 = requestAnimationFrame(() => {
+    const id = requestAnimationFrame(() => {
       setTimeout(() => setVisible(true), 150);
     });
     
-    return () => {
-      cancelAnimationFrame(id1);
-      cancelAnimationFrame(id2);
-    };
+    return () => cancelAnimationFrame(id);
   }, [tabKey]);
 
   return (
@@ -163,23 +155,6 @@ function PageWrapper({ children, tabKey }: PageWrapperProps) {
         transition: 'opacity 0.4s cubic-bezier(0.4,0,0.2,1), transform 0.4s cubic-bezier(0.34,1.56,0.64,1)',
       }}
     >
-      {/* Animated line at top */}
-      <div style={{
-        position: 'relative',
-        marginBottom: '20px',
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: lineVisible ? '100%' : '0%',
-          height: '2px',
-          background: 'linear-gradient(90deg, #6366f1, #a855f7)',
-          borderRadius: '100px',
-          transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1)',
-          boxShadow: '0 0 12px rgba(99,102,241,0.4)',
-        }} />
-      </div>
       {children}
     </div>
   );
