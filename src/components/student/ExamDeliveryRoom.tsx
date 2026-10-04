@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../services/api.ts';
-import { Clock, CheckCircle2, AlertTriangle, Flag, ArrowLeft, ArrowRight, Save, Send } from 'lucide-react';
+import { Button, Badge, Card } from '../ui/index.ts';
+import { Clock, CheckCircle2, Flag, ArrowLeft, ArrowRight, Save, Send } from 'lucide-react';
 
 interface ExamDeliveryRoomProps {
   attemptId: number;
@@ -119,8 +120,8 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
 
   if (loading) {
     return (
-      <div className="p-12 text-center text-xs font-mono text-slate-500">
-        Connecting to Examination Delivery Room...
+      <div className="p-12 flex items-center justify-center">
+        <div className="loader-ring" />
       </div>
     );
   }
@@ -128,42 +129,44 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
   // Submission Receipt Screen (DLV-09)
   if (submissionReceipt) {
     return (
-      <div className="max-w-xl mx-auto my-12 bg-white border border-slate-200 rounded-lg p-8 shadow-sm space-y-5 text-center">
-        <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-          <CheckCircle2 className="w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Examination Submitted</h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Receipt ID: <span className="font-mono font-medium text-slate-700">ATT-{attemptId}-{Date.now().toString().slice(-6)}</span>
-          </p>
-        </div>
-
-        <div className="p-4 bg-slate-50 rounded-md border border-slate-200 text-xs space-y-2 text-left">
-          <div className="flex justify-between">
-            <span className="text-slate-500">Status:</span>
-            <span className="font-bold uppercase text-slate-800 font-mono">{submissionReceipt.status}</span>
+      <Card padding="lg" style={{ maxWidth: '512px', margin: '3rem auto' }}>
+        <div className="text-center space-y-5">
+          <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 size={24} className="text-emerald-600" />
           </div>
-          {submissionReceipt.rawScore !== undefined && submissionReceipt.rawScore !== null && (
-            <div className="flex justify-between">
-              <span className="text-slate-500">Objective Score:</span>
-              <span className="font-bold text-slate-900 font-mono tabular-nums">
-                {submissionReceipt.rawScore} marks ({submissionReceipt.percentage}%)
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">Examination Submitted</h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Receipt ID:{' '}
+              <span className="font-mono font-medium text-slate-700">
+                ATT-{attemptId}-{Date.now().toString().slice(-6)}
               </span>
-            </div>
-          )}
-          <div className="pt-2 border-t border-slate-200 text-slate-600 text-[11px]">
-            {submissionReceipt.message}
+            </p>
           </div>
-        </div>
 
-        <button
-          onClick={onExit}
-          className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-semibold"
-        >
-          Return to Candidate Dashboard
-        </button>
-      </div>
+          <div className="p-4 bg-slate-50 rounded-md border border-slate-200 text-xs space-y-2 text-left">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Status:</span>
+              <span className="font-bold uppercase text-slate-800 font-mono">{submissionReceipt.status}</span>
+            </div>
+            {submissionReceipt.rawScore !== undefined && submissionReceipt.rawScore !== null && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Objective Score:</span>
+                <span className="font-bold text-slate-900 font-mono tabular-nums">
+                  {submissionReceipt.rawScore} marks ({submissionReceipt.percentage}%)
+                </span>
+              </div>
+            )}
+            <div className="pt-2 border-t border-slate-200 text-slate-600 text-[11px]">
+              {submissionReceipt.message}
+            </div>
+          </div>
+
+          <Button variant="primary" onClick={onExit}>
+            Return to Dashboard
+          </Button>
+        </div>
+      </Card>
     );
   }
 
@@ -178,33 +181,33 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Top Header: Title, Server-Time Clock, and Autosave Indicator */}
-      <div className="bg-slate-900 text-white p-4 rounded-lg flex items-center justify-between shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
         <div>
-          <h1 className="text-sm font-bold truncate max-w-md">{attempt.exam_title}</h1>
-          <div className="text-[11px] text-slate-300 font-mono mt-0.5">
+          <h1 className="text-slate-900 text-sm font-semibold truncate max-w-md">{attempt.exam_title}</h1>
+          <div className="text-slate-500 text-xs font-mono mt-0.5">
             Candidate: {attempt.first_name} {attempt.last_name} ({attempt.admission_no}) · Sitting #{attempt.attempt_no}
           </div>
         </div>
 
         <div className="flex items-center gap-4">
           {/* Autosave Indicator (DLV-06) */}
-          <div className="flex items-center gap-1.5 text-[11px] font-mono">
-            <Save className="w-3.5 h-3.5 text-slate-400" />
-            <span className={saveStatus === 'saving' ? 'text-amber-300' : saveStatus === 'saved' ? 'text-emerald-400' : 'text-rose-400'}>
-              {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save Error'}
-            </span>
+          <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500">
+            <Save className="w-3.5 h-3.5" />
+            {saveStatus === 'saved' && <Badge variant="success">Saved</Badge>}
+            {saveStatus === 'saving' && <Badge variant="warning">Saving…</Badge>}
+            {saveStatus === 'error' && <Badge variant="danger">Error</Badge>}
           </div>
 
           {/* Server Countdown Clock (DLV-04, 8.1) */}
           <div
-            className={`flex items-center gap-2 px-3 py-1.5 rounded font-mono font-bold text-sm tabular-nums border ${
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono font-bold text-sm border ${
               isTimeCritical
-                ? 'bg-rose-500/20 text-rose-300 border-rose-500 animate-pulse'
-                : 'bg-white/10 text-white border-white/20'
+                ? 'bg-red-50 border-red-300 text-red-700 animate-pulse'
+                : 'bg-slate-50 border-slate-200 text-slate-900'
             }`}
           >
             <Clock className="w-4 h-4" />
-            <span>
+            <span className="tabular-nums">
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </span>
           </div>
@@ -252,10 +255,10 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
                   return (
                     <label
                       key={opt.id}
-                      className={`flex items-center gap-3 p-3 rounded-md border text-xs cursor-pointer transition-all ${
+                      className={`flex items-center gap-3 p-3 rounded-lg border text-xs cursor-pointer transition-all ${
                         isChecked
-                          ? 'border-indigo-600 bg-indigo-50/50 text-indigo-950 font-medium shadow-xs'
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-800'
+                          ? 'border-2 border-indigo-600 bg-indigo-50 text-indigo-900 font-medium'
+                          : 'border border-slate-200 hover:bg-slate-50 text-slate-800'
                       }`}
                     >
                       <input
@@ -263,7 +266,7 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
                         name={`q_${currentQ.id}`}
                         checked={isChecked}
                         onChange={() => handleAnswerChange(currentQ.id, { selectedOptionId: opt.id })}
-                        className="text-slate-900 focus:ring-slate-900"
+                        className="text-indigo-600 focus:ring-indigo-600"
                       />
                       <span>{opt.text}</span>
                     </label>
@@ -284,10 +287,10 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
                   return (
                     <label
                       key={opt.id}
-                      className={`flex items-center gap-3 p-3 rounded-md border text-xs cursor-pointer transition-all ${
+                      className={`flex items-center gap-3 p-3 rounded-lg border text-xs cursor-pointer transition-all ${
                         isChecked
-                          ? 'border-indigo-600 bg-indigo-50/50 text-indigo-950 font-medium shadow-xs'
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-800'
+                          ? 'border-2 border-indigo-600 bg-indigo-50 text-indigo-900 font-medium'
+                          : 'border border-slate-200 hover:bg-slate-50 text-slate-800'
                       }`}
                     >
                       <input
@@ -299,7 +302,7 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
                             : selectedIds.filter((id: string) => id !== opt.id);
                           handleAnswerChange(currentQ.id, { selectedOptionIds: updated });
                         }}
-                        className="text-slate-900 focus:ring-slate-900"
+                        className="text-indigo-600 focus:ring-indigo-600"
                       />
                       <span>{opt.text}</span>
                     </label>
@@ -308,7 +311,7 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
               </div>
             )}
 
-            {/* Short Answer */}
+            {/* Short Answer — raw input to preserve layout */}
             {currentQ.type === 'short_answer' && (
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Your Answer</label>
@@ -317,12 +320,12 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
                   value={currentResp.text || ''}
                   onChange={(e) => handleAnswerChange(currentQ.id, { text: e.target.value })}
                   placeholder="Type concise answer here..."
-                  className="w-full px-3 py-2 border border-slate-300 rounded font-mono text-xs focus:ring-1 focus:ring-slate-900"
+                  className="w-full px-3 py-2 border border-slate-300 rounded font-mono text-xs focus:ring-1 focus:ring-indigo-600"
                 />
               </div>
             )}
 
-            {/* Essay / Long Answer */}
+            {/* Essay / Long Answer — raw textarea to preserve layout */}
             {currentQ.type === 'essay' && (
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">
@@ -333,108 +336,108 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
                   value={currentResp.text || ''}
                   onChange={(e) => handleAnswerChange(currentQ.id, { text: e.target.value })}
                   placeholder="Provide your complete reasoning, mathematical derivation, or essay response..."
-                  className="w-full p-3 border border-slate-300 rounded text-xs leading-relaxed focus:ring-1 focus:ring-slate-900"
+                  className="w-full p-3 border border-slate-300 rounded text-xs leading-relaxed focus:ring-1 focus:ring-indigo-600"
                 />
               </div>
             )}
           </div>
 
           {/* Navigation Controls */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs">
-            <button
+          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+            <Button
+              variant="secondary"
+              icon={<ArrowLeft size={14} />}
               onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
               disabled={currentIndex === 0}
-              className="flex items-center gap-1 px-3 py-1.5 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-40"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Previous</span>
-            </button>
+              Previous
+            </Button>
 
             {currentIndex < questions.length - 1 ? (
-              <button
+              <Button
+                variant="primary"
+                iconPosition="right"
+                icon={<ArrowRight size={14} />}
                 onClick={() => setCurrentIndex(currentIndex + 1)}
-                className="flex items-center gap-1 px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded font-medium"
               >
-                <span>Next</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+                Next
+              </Button>
             ) : (
-              <button
+              <Button
+                variant="primary"
+                icon={<Send size={14} />}
+                style={{ background: '#059669' }}
                 onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="flex items-center gap-1.5 px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-bold shadow-sm"
+                loading={isSubmitting}
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>Submit Final Exam</span>
-              </button>
+                Submit Final Exam
+              </Button>
             )}
           </div>
         </div>
 
         {/* Question Palette Sidebar */}
-        <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-4 text-xs">
-          <div className="font-bold text-slate-900 pb-2 border-b border-slate-100">
-            Question Navigator (DLV-04)
-          </div>
-
-          <div className="grid grid-cols-4 gap-2">
-            {questions.map((q: any, idx: number) => {
-              const isCurrent = idx === currentIndex;
-              const hasAnswer = answers[q.id] && (
-                answers[q.id].selectedOptionId ||
-                (answers[q.id].selectedOptionIds && answers[q.id].selectedOptionIds.length > 0) ||
-                answers[q.id].text
-              );
-              const isFlag = flagged[q.id];
-
-              return (
-                <button
-                  key={q.id}
-                  onClick={() => setCurrentIndex(idx)}
-                  className={`h-9 rounded font-mono font-bold text-xs flex items-center justify-center relative border transition-all ${
-                    isCurrent
-                      ? 'border-slate-950 bg-slate-950 text-white shadow-sm'
-                      : hasAnswer
-                      ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
-                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <span>{idx + 1}</span>
-                  {isFlag && (
-                    <span className="w-2 h-2 rounded-full bg-amber-500 absolute top-1 right-1" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Legend */}
-          <div className="space-y-1.5 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded bg-emerald-50 border border-emerald-300" />
-              <span>Answered</span>
+        <Card padding="sm">
+          <div className="space-y-4">
+            <div className="font-bold text-slate-900 pb-2 border-b border-slate-100 text-xs">
+              Question Navigator
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded bg-slate-50 border border-slate-200" />
-              <span>Unanswered</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              <span>Flagged for Review</span>
-            </div>
-          </div>
 
-          {/* Final Submit Trigger */}
-          <div className="pt-4">
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded font-bold transition-colors"
-            >
-              Finish & Submit
-            </button>
+            <div className="grid grid-cols-4 gap-2">
+              {questions.map((q: any, idx: number) => {
+                const isCurrent = idx === currentIndex;
+                const hasAnswer = answers[q.id] && (
+                  answers[q.id].selectedOptionId ||
+                  (answers[q.id].selectedOptionIds && answers[q.id].selectedOptionIds.length > 0) ||
+                  answers[q.id].text
+                );
+                const isFlag = flagged[q.id];
+
+                return (
+                  <button
+                    key={q.id}
+                    onClick={() => setCurrentIndex(idx)}
+                    className={`h-9 rounded-lg font-mono font-bold text-xs flex items-center justify-center relative transition-all ${
+                      isCurrent
+                        ? 'bg-indigo-600 text-white border border-indigo-600'
+                        : hasAnswer
+                        ? 'bg-emerald-50 border border-emerald-300 text-emerald-900'
+                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>{idx + 1}</span>
+                    {isFlag && (
+                      <span className="w-2 h-2 rounded-full bg-amber-500 absolute top-1 right-1" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="space-y-1.5 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded bg-emerald-50 border border-emerald-300" />
+                <span>Answered</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded bg-white border border-slate-200" />
+                <span>Unanswered</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span>Flagged for Review</span>
+              </div>
+            </div>
+
+            {/* Final Submit Trigger */}
+            <div className="pt-4">
+              <Button variant="primary" fullWidth onClick={handleSubmit} loading={isSubmitting}>
+                Finish &amp; Submit
+              </Button>
+            </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

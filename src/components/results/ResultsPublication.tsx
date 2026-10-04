@@ -3,7 +3,8 @@ import { api } from '../../services/api.ts';
 import { useAuth } from '../../context/AuthContext.tsx';
 import { Term, SchoolClass, Section } from '../../types/index.ts';
 import { ReportCardModal } from '../student/ReportCardModal.tsx';
-import { CheckCircle, Lock, Unlock, Send, Printer, FileText, Download, ShieldAlert } from 'lucide-react';
+import { Button, Select, Badge, StatusBadge, Modal, ModalFooter, Textarea } from '../ui/index.ts';
+import { CheckCircle, Lock, Unlock, Send, FileText, Download, ShieldAlert } from 'lucide-react';
 
 export const ResultsPublication: React.FC = () => {
   const { currentRole } = useAuth();
@@ -96,138 +97,118 @@ export const ResultsPublication: React.FC = () => {
     a.click();
   };
 
+  // Suppress unused variable warnings for classes (kept for future use)
+  void classes;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900">
-            Results Engine & Publication Governance (PUB-01 to PUB-07)
+            Results Engine &amp; Publication Governance
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Server-side calculation of subject weights, GPAs, competition ranks, and multi-stage review & publication workflow.
+            Server-side calculation of subject weights, GPAs, competition ranks, and multi-stage review &amp; publication workflow.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={exportCSV}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 rounded text-xs font-medium text-slate-700 bg-white hover:bg-slate-50"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-          </button>
-        </div>
+        <Button variant="secondary" icon={<Download size={13} />} onClick={exportCSV}>
+          Export CSV
+        </Button>
       </div>
 
       {/* Filter and Workflow Action Bar */}
-      <div className="p-4 bg-white border border-slate-200 rounded-lg flex flex-wrap items-center justify-between gap-4 text-xs">
+      <div className="p-4 bg-white border border-slate-200 rounded-lg flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-4">
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-700 mb-1">Academic Term</label>
-            <select
-              value={selectedTermId}
-              onChange={(e) => setSelectedTermId(parseInt(e.target.value, 10))}
-              className="px-2.5 py-1.5 border border-slate-300 rounded font-medium text-slate-900 bg-white"
-            >
-              {terms.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label="Academic Term"
+            value={selectedTermId}
+            onChange={(e) => setSelectedTermId(parseInt(e.target.value, 10))}
+          >
+            {terms.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </Select>
 
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-700 mb-1">Class Section</label>
-            <select
-              value={selectedSectionId}
-              onChange={(e) => setSelectedSectionId(parseInt(e.target.value, 10))}
-              className="px-2.5 py-1.5 border border-slate-300 rounded font-medium text-slate-900 bg-white"
-            >
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>{s.section_name}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label="Class Section"
+            value={selectedSectionId}
+            onChange={(e) => setSelectedSectionId(parseInt(e.target.value, 10))}
+          >
+            {sections.map((s) => (
+              <option key={s.id} value={s.id}>{s.section_name}</option>
+            ))}
+          </Select>
 
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-[11px] font-medium text-slate-500">Current Phase:</span>
-            <span
-              className={`px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wide border ${
-                status === 'locked'
-                  ? 'bg-rose-50 text-rose-700 border-rose-200'
-                  : status === 'published'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : status === 'approved'
-                  ? 'bg-blue-50 text-blue-700 border-blue-200'
-                  : status === 'under_review'
-                  ? 'bg-amber-50 text-amber-700 border-amber-200'
-                  : 'bg-slate-100 text-slate-700 border-slate-200'
-              }`}
-            >
-              {status}
-            </span>
+          <div className="mt-5 flex items-center gap-2">
+            <span className="text-xs font-medium text-slate-500">Current Phase:</span>
+            <StatusBadge status={status} />
           </div>
         </div>
 
         {/* Workflow Action Transitions */}
         <div className="flex flex-wrap items-center gap-2">
           {status === 'draft' && (
-            <button
+            <Button
+              variant="secondary"
+              icon={<Send size={13} />}
+              loading={actionLoading}
               onClick={() => handleAction('submit_review')}
-              disabled={actionLoading}
-              className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded font-medium"
             >
-              Submit for Registrar Review
-            </button>
+              Submit for Review
+            </Button>
           )}
 
           {(status === 'under_review' || currentRole === 'admin') && (
-            <button
+            <Button
+              variant="secondary"
+              icon={<CheckCircle size={13} />}
+              loading={actionLoading}
               onClick={() => handleAction('approve')}
-              disabled={actionLoading}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium"
             >
               Approve Results
-            </button>
+            </Button>
           )}
 
           {(status === 'approved' || (status === 'draft' && currentRole === 'admin')) && (
-            <button
+            <Button
+              variant="primary"
+              icon={<Send size={13} />}
+              loading={actionLoading}
               onClick={() => handleAction('publish')}
-              disabled={actionLoading}
-              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-semibold shadow-sm"
             >
-              Publish to Students (PUB-02)
-            </button>
+              Publish to Students
+            </Button>
           )}
 
           {status === 'published' && (
             <>
-              <button
+              <Button
+                variant="ghost"
+                loading={actionLoading}
                 onClick={() => handleAction('unpublish')}
-                disabled={actionLoading}
-                className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded font-medium"
               >
                 Unpublish
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
+                icon={<Lock size={13} />}
+                loading={actionLoading}
                 onClick={() => handleAction('lock')}
-                disabled={actionLoading}
-                className="flex items-center gap-1 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded font-semibold"
               >
-                <Lock className="w-3.5 h-3.5" />
-                <span>Lock Term Results (PUB-04)</span>
-              </button>
+                Lock Term Results
+              </Button>
             </>
           )}
 
           {status === 'locked' && (
-            <button
+            <Button
+              variant="danger"
+              icon={<Unlock size={13} />}
               onClick={() => setShowUnlockModal(true)}
-              className="flex items-center gap-1 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded font-semibold"
             >
-              <Unlock className="w-3.5 h-3.5" />
-              <span>Reopen Locked Results (Admin Override)</span>
-            </button>
+              Reopen Locked Results
+            </Button>
           )}
         </div>
       </div>
@@ -252,8 +233,8 @@ export const ResultsPublication: React.FC = () => {
           <tbody className="divide-y divide-slate-100">
             {summaries.map((s) => (
               <tr key={s.studentId} className="hover:bg-slate-50/70">
-                <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
-                  #{s.rank}
+                <td className="py-2.5 px-3">
+                  <span className="font-mono font-bold text-indigo-600">#{s.rank}</span>
                 </td>
                 <td className="py-2.5 px-3 font-mono text-slate-600">{s.admissionNo}</td>
                 <td className="py-2.5 px-3 font-semibold text-slate-900 whitespace-nowrap">
@@ -285,24 +266,19 @@ export const ResultsPublication: React.FC = () => {
                   {s.overallGpa.toFixed(2)}
                 </td>
                 <td className="py-2.5 px-3">
-                  <span
-                    className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                      s.passed
-                        ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
-                        : 'text-rose-700 bg-rose-50 border border-rose-200'
-                    }`}
-                  >
+                  <Badge variant={s.passed ? 'success' : 'danger'}>
                     {s.passed ? 'PASSED' : 'FAILED'}
-                  </span>
+                  </Badge>
                 </td>
                 <td className="py-2.5 px-3 text-right">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<FileText size={13} />}
                     onClick={() => setSelectedStudentId(s.studentId)}
-                    className="flex items-center gap-1 ml-auto text-xs text-indigo-600 hover:text-indigo-800 font-medium px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
                   >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>Report Card</span>
-                  </button>
+                    Report Card
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -311,47 +287,40 @@ export const ResultsPublication: React.FC = () => {
       </div>
 
       {/* Unlock / Reopen Modal (Mandatory documented reason per PUB-04) */}
-      {showUnlockModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl space-y-4">
-            <div className="flex items-center gap-2 text-rose-600">
-              <ShieldAlert className="w-5 h-5" />
-              <h3 className="text-base font-bold text-slate-900">Reopen Locked Term Results (PUB-04)</h3>
-            </div>
-            <p className="text-xs text-slate-600">
-              Per strict institutional governance, unlocking a finalized term requires Administrator authorization and a mandatory audit reason.
-            </p>
-            <div className="space-y-2 text-xs">
-              <label className="block font-semibold text-slate-700">Official Justification / Reason</label>
-              <textarea
-                rows={3}
-                value={unlockReason}
-                onChange={(e) => setUnlockReason(e.target.value)}
-                placeholder="e.g. Authorized correction of physics exam essay rubric following registrar committee review."
-                className="w-full p-2 border border-slate-300 rounded focus:ring-1 focus:ring-rose-500"
-                required
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowUnlockModal(false)}
-                className="px-3 py-1.5 border border-slate-300 rounded hover:bg-slate-50 text-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAction('reopen', unlockReason)}
-                disabled={!unlockReason.trim() || actionLoading}
-                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-xs font-semibold disabled:opacity-50"
-              >
-                Confirm Unlock & Log Audit
-              </button>
-            </div>
-          </div>
+      <Modal
+        isOpen={showUnlockModal}
+        onClose={() => setShowUnlockModal(false)}
+        title="Reopen Locked Results"
+        size="md"
+      >
+        <div className="flex items-center gap-2 mb-3 text-red-600">
+          <ShieldAlert size={18} />
+          <p className="text-sm text-slate-600">
+            Mandatory audit reason required. Unlocking a finalized term requires Administrator authorization.
+          </p>
         </div>
-      )}
+        <Textarea
+          label="Official Justification / Reason"
+          rows={3}
+          value={unlockReason}
+          onChange={(e) => setUnlockReason(e.target.value)}
+          placeholder="e.g. Authorized correction of physics exam essay rubric following registrar committee review."
+          fullWidth
+        />
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setShowUnlockModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            loading={actionLoading}
+            disabled={!unlockReason.trim()}
+            onClick={() => handleAction('reopen', unlockReason)}
+          >
+            Confirm Unlock
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       {/* Report Card Modal */}
       {selectedStudentId && (

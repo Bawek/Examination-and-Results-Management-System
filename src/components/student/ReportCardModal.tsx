@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api.ts';
 import crestImage from '../../assets/images/apex_academy_crest_1790666516021.jpg';
-import { Printer, X, Award, CheckCircle2 } from 'lucide-react';
+import { Badge } from '../ui/index.ts';
+import { Printer, X, Award } from 'lucide-react';
 
 interface ReportCardModalProps {
   studentId: number;
@@ -57,20 +58,23 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({ studentId, ter
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-lg max-w-3xl w-full shadow-2xl my-8 overflow-hidden flex flex-col">
         {/* Modal Top Actions (Hidden during print) */}
-        <div className="flex items-center justify-between px-6 py-3 bg-slate-900 text-white print:hidden">
+        <div className="flex items-center justify-between px-6 py-3 bg-slate-50 border-b border-slate-200 print:hidden">
           <div className="flex items-center gap-2">
-            <Award className="w-4 h-4 text-amber-400" />
-            <span className="text-xs font-semibold">Official Student Academic Record</span>
+            <Award className="w-4 h-4 text-indigo-600" />
+            <span className="text-xs font-semibold text-slate-700">Official Student Academic Record</span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-xs transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 hover:bg-slate-50 rounded text-xs text-slate-700 transition-colors"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Print / Save PDF</span>
             </button>
-            <button onClick={onClose} className="p-1 hover:bg-white/10 rounded">
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-slate-100 rounded text-slate-500"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -88,7 +92,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({ studentId, ter
                 referrerPolicy="no-referrer"
               />
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-950 uppercase">
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 uppercase">
                   {school.institution_name}
                 </h1>
                 <p className="text-xs text-slate-600">{school.address}</p>
@@ -97,28 +101,28 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({ studentId, ter
                 </p>
               </div>
             </div>
-            <div className="mt-2 text-xs font-bold uppercase tracking-wider text-slate-800 bg-slate-100 py-1 rounded">
-              Official Term Assessment & Result Transcript (RPT-03)
+            <div className="mt-2 text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 py-1 rounded">
+              Official Term Assessment &amp; Result Transcript
             </div>
           </div>
 
           {/* Student & Academic Period Metadata */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-slate-50 p-3.5 rounded border border-slate-200">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm">
             <div>
-              <span className="text-slate-500 block text-[10px]">STUDENT NAME</span>
-              <span className="font-bold text-slate-900">{studentSummary.studentName}</span>
+              <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide block">Student Name</span>
+              <span className="text-sm font-semibold text-slate-900">{studentSummary.studentName}</span>
             </div>
             <div>
-              <span className="text-slate-500 block text-[10px]">ADMISSION NO</span>
-              <span className="font-mono font-bold text-slate-900">{studentSummary.admissionNo}</span>
+              <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide block">Admission No</span>
+              <span className="text-sm font-semibold text-slate-900 font-mono">{studentSummary.admissionNo}</span>
             </div>
             <div>
-              <span className="text-slate-500 block text-[10px]">CLASS & SECTION</span>
-              <span className="font-bold text-slate-900">{studentSummary.className} · {studentSummary.sectionName}</span>
+              <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide block">Class &amp; Section</span>
+              <span className="text-sm font-semibold text-slate-900">{studentSummary.className} · {studentSummary.sectionName}</span>
             </div>
             <div>
-              <span className="text-slate-500 block text-[10px]">ACADEMIC PERIOD</span>
-              <span className="font-bold text-slate-900">{academicPeriod.term_name}</span>
+              <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide block">Academic Period</span>
+              <span className="text-sm font-semibold text-slate-900">{academicPeriod.term_name}</span>
             </div>
           </div>
 
@@ -136,8 +140,8 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({ studentId, ter
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {studentSummary.subjects.map((sub: any) => (
-                  <tr key={sub.subjectId} className="hover:bg-slate-50/50">
+                {studentSummary.subjects.map((sub: any, idx: number) => (
+                  <tr key={sub.subjectId} className={`hover:bg-slate-50 ${idx % 2 !== 0 ? 'bg-slate-50' : ''}`}>
                     <td className="py-2.5 px-3 font-bold text-slate-900">
                       {sub.subjectName} ({sub.subjectCode})
                     </td>
@@ -156,13 +160,13 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({ studentId, ter
                     <td className="py-2.5 px-3 text-center font-bold text-slate-900">
                       {sub.grade}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-right text-slate-800 tabular-nums">
+                    <td className="py-2.5 px-3 font-mono text-right text-slate-700 tabular-nums">
                       {sub.gradePoint.toFixed(2)}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className={`text-[10px] font-bold ${sub.passed ? 'text-emerald-700' : 'text-rose-700'}`}>
+                      <Badge variant={sub.passed ? 'success' : 'danger'}>
                         {sub.passed ? 'PASS' : 'FAIL'}
-                      </span>
+                      </Badge>
                     </td>
                   </tr>
                 ))}
@@ -171,24 +175,24 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({ studentId, ter
           </div>
 
           {/* Academic Standing & Totals */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-slate-900 text-white p-4 rounded">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-indigo-700 text-white p-4 rounded-lg">
             <div>
-              <span className="text-slate-400 block text-[10px]">WEIGHTED AVERAGE</span>
+              <span className="text-indigo-200 block text-[10px]">WEIGHTED AVERAGE</span>
               <span className="text-lg font-bold font-mono tabular-nums">{studentSummary.overallAverage}%</span>
             </div>
             <div>
-              <span className="text-slate-400 block text-[10px]">CUMULATIVE GPA</span>
+              <span className="text-indigo-200 block text-[10px]">CUMULATIVE GPA</span>
               <span className="text-lg font-bold font-mono tabular-nums">{studentSummary.overallGpa.toFixed(2)}</span>
             </div>
             <div>
-              <span className="text-slate-400 block text-[10px]">CLASS POSITION / RANK</span>
+              <span className="text-indigo-200 block text-[10px]">CLASS POSITION / RANK</span>
               <span className="text-lg font-bold font-mono tabular-nums">
                 Rank #{studentSummary.rank} of {totalStudentsCount}
               </span>
             </div>
             <div>
-              <span className="text-slate-400 block text-[10px]">TERM STANDING</span>
-              <span className="text-lg font-bold text-emerald-400">
+              <span className="text-indigo-200 block text-[10px]">TERM STANDING</span>
+              <span className="text-lg font-bold text-emerald-300">
                 {studentSummary.passed ? 'PROMOTED / PASS' : 'ACADEMIC REVIEW'}
               </span>
             </div>
@@ -196,20 +200,20 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({ studentId, ter
 
           {/* Remarks & Signatures */}
           <div className="space-y-4 pt-2">
-            <div className="text-xs text-slate-800 bg-slate-50 p-3 rounded border border-slate-200">
+            <div className="text-xs text-slate-700 bg-slate-50 p-3 rounded border border-slate-200">
               <span className="font-bold text-slate-900">Faculty Remarks: </span>
               {studentSummary.teacherComment || 'Demonstrates strong dedication and academic competence throughout the assessment term.'}
             </div>
 
-            <div className="grid grid-cols-3 gap-6 pt-8 text-center text-xs">
-              <div className="border-t border-slate-400 pt-1 font-medium text-slate-700">
+            <div className="grid grid-cols-3 gap-6 pt-8">
+              <div className="border-t-2 border-slate-400 pt-2 text-center text-xs font-medium text-slate-600">
                 Class Teacher
               </div>
-              <div className="border-t border-slate-400 pt-1 font-medium text-slate-700">
+              <div className="border-t-2 border-slate-400 pt-2 text-center text-xs font-medium text-slate-600">
                 Academic Registrar
               </div>
-              <div className="border-t border-slate-400 pt-1 font-medium text-slate-700">
-                Institutional Stamp & Date
+              <div className="border-t-2 border-slate-400 pt-2 text-center text-xs font-medium text-slate-600">
+                Institutional Stamp &amp; Date
               </div>
             </div>
           </div>
