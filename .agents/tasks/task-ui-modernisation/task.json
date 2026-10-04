@@ -1,0 +1,7 @@
+{
+  "task_id": "task-ui-modernisation",
+  "task_description": "Modernise the Apex IERMS UI from a dark glass-morphism theme to a clean light theme (white cards, slate-50 bg, indigo-600 brand). Fix fragmented forms by enforcing the label→input→helper pattern. Migrate all modal overlays to the Modal primitive. Add Tailwind tab bar to AcademicMaster.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}
