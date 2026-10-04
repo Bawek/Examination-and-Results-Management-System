@@ -43,7 +43,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({ studentId, ter
           <h3 className="text-base font-bold text-slate-900">Access Restricted</h3>
           <p className="text-slate-600">{error || 'Could not load report card.'}</p>
           <div className="flex justify-end pt-2">
-            <button onClick={onClose} className="px-3 py-1.5 bg-slate-900 text-white rounded">
+            <button onClick={onClose} className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded text-xs font-medium transition-colors">
               Close
             </button>
           </div>
