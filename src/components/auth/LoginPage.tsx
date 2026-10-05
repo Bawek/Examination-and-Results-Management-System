@@ -95,7 +95,7 @@ export const LoginPage: React.FC = () => {
               style={{ marginBottom: '10px', fontSize: '11px', padding: '3px 10px' }}
             >
               <Database size={11} style={{ color: 'inherit' }} />
-              Neon PostgreSQL · IERMS 2.0
+              IERMS 2.0
             </Badge>
 
             <h1

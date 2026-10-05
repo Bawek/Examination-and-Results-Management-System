@@ -3,6 +3,7 @@ import { query, pool } from './db.ts';
 import { calculateSectionResults } from './services/resultEngine.ts';
 import { syncExamToAssessment } from './services/examSync.ts';
 import bcrypt from 'bcryptjs';
+import { loginRateLimiter, trackLoginAttempt } from './middleware.ts';
 
 export const router = Router();
 
@@ -39,7 +40,7 @@ function requireAuth(req: Request, res: Response, next: Function) {
 // ─────────────────────────────────────────────────────────────
 
 // POST /api/auth/login
-router.post('/auth/login', async (req: Request, res: Response) => {
+router.post('/auth/login', loginRateLimiter, trackLoginAttempt, async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -133,6 +134,55 @@ router.get('/auth/users-list', requireAuth, async (req: Request, res: Response) 
   try {
     const users = await query('SELECT id, username, email, role, full_name, status, last_login FROM users ORDER BY id ASC');
     res.json(users.rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/change-password  — user can change their own password (IAM-04)
+router.post('/auth/change-password', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'Not authenticated' });
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password are required.' });
+    }
+
+    // Validate new password strength
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters long.' });
+    }
+
+    // Verify current password
+    const currentHash = user.password_hash || '';
+    let passwordValid = false;
+    if (currentHash.startsWith('$2')) {
+      passwordValid = await bcrypt.compare(currentPassword, currentHash);
+    } else {
+      // Legacy plain-text comparison
+      passwordValid = (currentPassword === currentHash);
+    }
+
+    if (!passwordValid) {
+      return res.status(401).json({ error: 'Current password is incorrect.' });
+    }
+
+    // Hash new password
+    const newHash = await bcrypt.hash(newPassword, 12);
+
+    // Update password
+    await query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, user.id]);
+
+    // Audit log
+    await query(`
+      INSERT INTO audit_logs (user_id, action, entity_type, entity_id, reason)
+      VALUES ($1, 'PASSWORD_CHANGE', 'USER', $2, 'User changed their password')
+    `, [user.id, user.id.toString()]);
+
+    res.json({ success: true, message: 'Password changed successfully.' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -506,6 +556,38 @@ router.post('/exams', async (req: Request, res: Response) => {
       start_at, end_at, attempt_limit, counted_attempt_rule,
       navigation_policy, show_feedback_policy, question_ids
     } = req.body;
+
+    // Answer key validation (QBK-09) - validate all questions have valid answer keys
+    if (Array.isArray(question_ids) && question_ids.length > 0) {
+      const questionsWithoutKeys: number[] = [];
+      for (const qId of question_ids) {
+        const qData = await query('SELECT type, answer_keys, rubric FROM questions WHERE id = $1', [qId]);
+        const question = qData.rows[0];
+
+        if (!question) {
+          return res.status(404).json({ error: `Question with ID ${qId} not found` });
+        }
+
+        // Objective questions must have answer_keys
+        if (['single_choice', 'multiple_select', 'true_false'].includes(question.type)) {
+          if (!question.answer_keys || Object.keys(question.answer_keys).length === 0) {
+            questionsWithoutKeys.push(qId);
+          }
+        }
+        // Subjective questions must have rubric
+        else if (['essay', 'short_answer'].includes(question.type)) {
+          if (!question.rubric || Object.keys(question.rubric).length === 0) {
+            questionsWithoutKeys.push(qId);
+          }
+        }
+      }
+
+      if (questionsWithoutKeys.length > 0) {
+        return res.status(400).json({
+          error: `Cannot publish exam: ${questionsWithoutKeys.length} question(s) missing answer keys or rubrics. Question IDs: ${questionsWithoutKeys.join(', ')}`
+        });
+      }
+    }
 
     const exRes = await query(`
       INSERT INTO exams (
@@ -1079,6 +1161,14 @@ router.post('/assessments', async (req: Request, res: Response) => {
     const user = await getUser(req);
     const { class_subject_id, term_id, name, max_score, weight, due_date, source_type, exam_id } = req.body;
 
+    // Closed period enforcement (ACD-10)
+    const termRes = await query('SELECT status FROM terms WHERE id = $1', [term_id]);
+    if (termRes.rows[0]?.status === 'closed' || termRes.rows[0]?.status === 'locked') {
+      return res.status(403).json({
+        error: 'Cannot create assessments for closed or locked terms. Please contact administrator.'
+      });
+    }
+
     // Weight sum validation (ACD-08, RES-02)
     const existingWeightsRes = await query(`
       SELECT SUM(weight) as total_weight FROM assessments
@@ -1194,6 +1284,23 @@ router.post('/marks/save', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Entries must be an array' });
     }
 
+    // Closed period enforcement (ACD-10) - check first entry's term
+    if (entries.length > 0) {
+      const firstEntry = entries[0];
+      const assessmentId = firstEntry.assessmentId;
+      const termRes = await query(`
+        SELECT t.status FROM terms t
+        JOIN assessments a ON a.term_id = t.id
+        WHERE a.id = $1
+      `, [assessmentId]);
+
+      if (termRes.rows[0]?.status === 'closed' || termRes.rows[0]?.status === 'locked') {
+        return res.status(403).json({
+          error: 'Cannot save marks for closed or locked terms. Please contact administrator.'
+        });
+      }
+    }
+
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -1212,9 +1319,27 @@ router.post('/marks/save', async (req: Request, res: Response) => {
           }
 
           // Check if exam sourced and protect from manual overwrite without override flag (INT-04)
-          const existing = await client.query('SELECT source FROM marks WHERE assessment_id = $1 AND student_id = $2', [assessmentId, studentId]);
+          const existing = await client.query('SELECT source, score FROM marks WHERE assessment_id = $1 AND student_id = $2', [assessmentId, studentId]);
           if (existing.rows[0]?.source === 'exam' && !item.isOverride) {
-            throw new Error(`Mark is sourced from online exam. Authorized override confirmation is required to overwrite.`);
+            await client.query('ROLLBACK');
+            return res.status(403).json({
+              error: 'Mark is sourced from online exam. To overwrite, provide isOverride flag and reason for the change.',
+              currentScore: existing.rows[0].score,
+              requiresOverride: true
+            });
+          }
+
+          // If override is provided, log the change (INT-04, INT-06)
+          if (existing.rows[0]?.source === 'exam' && item.isOverride) {
+            await client.query(`
+              INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, reason)
+              VALUES ($1, 'MANUAL_OVERRIDE_EXAM_MARK', 'MARK', $2, $3, $4)
+            `, [user?.id, `${assessmentId}_${studentId}`, JSON.stringify({
+              previousScore: existing.rows[0].score,
+              newScore: numScore,
+              studentId,
+              assessmentId
+            }), reason || 'Manual override of exam-sourced mark']);
           }
 
           await client.query(`
@@ -1453,14 +1578,14 @@ router.get('/audit-logs', async (req: Request, res: Response) => {
 });
 
 // -------------------------------------------------------------
-// System Health & Neon PostgreSQL Status
+// System Health & Database Status
 // -------------------------------------------------------------
 router.get('/system/health', async (_req: Request, res: Response) => {
   try {
     const ping = await query('SELECT NOW() as db_time, current_database() as db_name, version() as version');
     res.json({
       status: 'operational',
-      database: 'Neon PostgreSQL (Connected)',
+      database: 'PostgreSQL (Connected)',
       dbTime: ping.rows[0].db_time,
       dbName: ping.rows[0].db_name,
       engine: ping.rows[0].version

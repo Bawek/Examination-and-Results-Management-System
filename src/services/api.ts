@@ -37,6 +37,8 @@ export const api = {
     req('/api/auth/logout', { method: 'POST' }),
   getMe: () => req('/api/auth/me'),
   getUsersList: () => req('/api/auth/users-list'),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    req('/api/auth/change-password', { method: 'POST', body: JSON.stringify(data) }),
   getHealth: () => req('/api/system/health'),
   getDashboardStats: () => req('/api/dashboard/stats'),
 

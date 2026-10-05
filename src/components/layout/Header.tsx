@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext.tsx';
-import { api } from '../../services/api.ts';
 import { Role } from '../../types/index.ts';
 import { Button, Badge } from '../ui';
+import { ChangePasswordModal } from '../auth/ChangePasswordModal';
 import crestImage from '../../assets/images/apex_academy_crest_1790666516021.jpg';
 import {
-  Database, ChevronDown, ChevronLeft,
-  Zap, BookOpen, BarChart3, Settings, ShieldAlert,
-  LogOut, Menu
+  ChevronDown, ChevronLeft, LogOut, Menu, KeyRound
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -33,26 +31,12 @@ const roleLabels: Record<Role, string> = {
   invigilator: 'Exam Invigilator',
 };
 
-const roleIcons: Record<Role, React.ElementType> = {
-  admin:       ShieldAlert,
-  teacher:     BookOpen,
-  student:     BarChart3,
-  registrar:   Settings,
-  invigilator: Zap,
-};
-
 export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, sidebarCollapsed = false, onToggleSidebar }) => {
   const { currentUser, currentRole, logout } = useAuth();
-  const [dbStatus, setDbStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    api.getHealth()
-      .then((data) => setDbStatus(data.status === 'operational' ? 'connected' : 'error'))
-      .catch(() => setDbStatus('error'));
-  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -209,21 +193,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, sidebar
 
           {/* ── Right Zone ── */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-
-            {/* DB Status Pill */}
-            <Badge
-              variant={dbStatus === 'connected' ? 'success' : 'warning'}
-              dot
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '11px',
-                padding: '5px 10px',
-                gap: '6px',
-              }}
-            >
-              <Database size={12} style={{ color: 'inherit' }} />
-              Neon DB
-            </Badge>
 
             {/* User Profile */}
             <div ref={menuRef} style={{ position: 'relative' }}>

@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import session from 'express-session';
 import { initDatabase } from './src/server/db.ts';
 import { router as apiRouter } from './src/server/routes.ts';
+import { rateLimiter, loginRateLimiter, trackLoginAttempt, csrfProtection } from './src/server/middleware.ts';
 
 dotenv.config();
 
@@ -19,6 +20,10 @@ async function startServer() {
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+  // Security middleware (IAM-06, CSRF)
+  app.use(rateLimiter);
+  app.use(csrfProtection);
 
   // Session middleware
   app.use(

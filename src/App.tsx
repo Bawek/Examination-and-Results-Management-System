@@ -78,7 +78,7 @@ function LoadingScreen() {
           marginTop: '6px',
           letterSpacing: '0.04em',
         }}>
-          Connecting to Neon PostgreSQL{dotStr}
+          Connecting to IERMS{dotStr}
         </p>
       </div>
 

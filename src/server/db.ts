@@ -27,7 +27,7 @@ export async function query(text: string, params?: any[]) {
 }
 
 export async function initDatabase() {
-  console.log('Connecting to Neon PostgreSQL and ensuring IERMS schema...');
+  console.log('Connecting to database and ensuring IERMS schema...');
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -800,7 +800,7 @@ async function seedInitialData(client: pg.PoolClient) {
   // Initial audit log
   await client.query(`
     INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, reason)
-    VALUES ($1, 'SYSTEM_INIT', 'SYSTEM', '1', '{"version":"1.0","environment":"Neon PostgreSQL"}', 'Initial IERMS Enterprise Setup and Reference Data Seeding')
+    VALUES ($1, 'SYSTEM_INIT', 'SYSTEM', '1', '{"version":"1.0","environment":"Production"}', 'Initial IERMS Enterprise Setup and Reference Data Seeding')
   `, [userIds['admin']]);
 
   console.log('IERMS enterprise database seeding completed successfully.');
