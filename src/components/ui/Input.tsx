@@ -151,6 +151,12 @@ export const Select: React.FC<SelectProps> = ({
     fontFamily: 'inherit',
     outline: 'none',
     cursor: 'pointer',
+    appearance: 'none',
+    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+    backgroundPosition: 'right 0.5rem center',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: '1.5em 1.5em',
+    paddingRight: '2.5rem',
   };
 
   const errorStyles = error ? {
@@ -227,7 +233,7 @@ export const Textarea: React.FC<TextareaProps> = ({
     border: '1px solid #cbd5e1',
     borderRadius: '8px',
     color: '#0f172a',
-    padding: '10px 14px',
+    padding: '12px 14px',
     fontSize: '14px',
     lineHeight: '1.6',
     letterSpacing: '0.01em',

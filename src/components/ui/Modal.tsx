@@ -58,11 +58,15 @@ export const Modal: React.FC<ModalProps> = ({
         inset: 0,
         zIndex: 1000,
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'center',
-        padding: '24px',
+        paddingTop: '40px',
+        paddingBottom: '40px',
+        paddingLeft: '24px',
+        paddingRight: '24px',
         background: 'rgba(0, 0, 0, 0.5)',
         animation: 'fadeIn 0.2s ease',
+        overflow: 'auto',
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -81,7 +85,8 @@ export const Modal: React.FC<ModalProps> = ({
           boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
           animation: 'fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           maxHeight: '90vh',
-          overflow: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -93,6 +98,7 @@ export const Modal: React.FC<ModalProps> = ({
               justifyContent: 'space-between',
               padding: '20px 24px',
               borderBottom: '1px solid #e2e8f0',
+              flexShrink: 0,
             }}
           >
             {title && (
@@ -138,7 +144,17 @@ export const Modal: React.FC<ModalProps> = ({
             )}
           </div>
         )}
-        <div style={{ padding: '24px' }}>{children}</div>
+        <div
+          className="modal-scrollable"
+          style={{
+            padding: '24px',
+            flex: 1,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+          }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

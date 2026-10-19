@@ -288,8 +288,9 @@ export const QuestionBank: React.FC = () => {
                         else setMultiCorrectOpts(multiCorrectOpts.filter(id => id !== opt.id));
                       }
                     }}
+                    style={{ cursor: 'pointer' }}
                   />
-                  <input
+                  <Input
                     type="text"
                     placeholder={`Option ${String.fromCharCode(65 + idx)}`}
                     value={opt.text}
@@ -298,8 +299,9 @@ export const QuestionBank: React.FC = () => {
                       updated[idx].text = e.target.value;
                       setOptions(updated);
                     }}
-                    style={{ flex: 1, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '14px', color: '#0f172a', outline: 'none' }}
+                    fullWidth
                     required
+                    style={{ padding: '8px 12px', fontSize: '14px' }}
                   />
                 </div>
               ))}

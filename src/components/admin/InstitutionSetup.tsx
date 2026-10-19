@@ -148,9 +148,14 @@ export const InstitutionSetup: React.FC = () => {
                   id="rankToggle"
                   checked={settings.ranking_enabled ?? true}
                   onChange={(e) => setSettings({ ...settings, ranking_enabled: e.target.checked })}
-                  className="rounded text-slate-900 focus:ring-slate-900"
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    cursor: 'pointer',
+                    accentColor: '#6366f1',
+                  }}
                 />
-                <label htmlFor="rankToggle" className="text-sm text-slate-700 flex items-center gap-2">
+                <label htmlFor="rankToggle" className="text-sm text-slate-700 flex items-center gap-2 cursor-pointer">
                   Compute term class ranks (with tie-handling)
                 </label>
               </div>

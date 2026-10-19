@@ -265,6 +265,33 @@ body {
 .scrollable { overflow-y: auto; overflow-x: hidden; }
 
 /* ============================================================
+   MODAL VISIBILITY
+   ============================================================ */
+.modal-scrollable {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(90vh - 140px);
+}
+
+.modal-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scrollable::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.modal-scrollable::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.modal-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ============================================================
    CODE / MONO SNIPPETS
    ============================================================ */
 .mono {
@@ -290,4 +317,38 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
+}
+
+/* ============================================================
+   TABLE ENHANCEMENTS
+   ============================================================ */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+table thead th {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+}
+
+table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+/* ============================================================
+   CARD ENHANCEMENTS
+   ============================================================ */
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.card-hover {
+  transition: all 0.2s ease;
+}
+
+.card-hover:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }

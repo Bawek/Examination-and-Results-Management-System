@@ -333,7 +333,13 @@ export const ExamBuilder: React.FC = () => {
                         if (e.target.checked) setSelectedQuestionIds([...selectedQuestionIds, q.id]);
                         else setSelectedQuestionIds(selectedQuestionIds.filter(id => id !== q.id));
                       }}
-                      style={{ marginTop: '2px' }}
+                      style={{
+                        marginTop: '2px',
+                        width: '16px',
+                        height: '16px',
+                        cursor: 'pointer',
+                        accentColor: '#6366f1',
+                      }}
                     />
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

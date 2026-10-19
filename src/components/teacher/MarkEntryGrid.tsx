@@ -306,12 +306,23 @@ export const MarkEntryGrid: React.FC = () => {
                                 width: '80px',
                                 border: '1px solid #cbd5e1',
                                 borderRadius: '6px',
-                                padding: '4px 8px',
-                                fontSize: '12px',
+                                padding: '6px 10px',
+                                fontSize: '13px',
                                 fontFamily: 'monospace',
                                 color: isInputDisabled ? '#94a3b8' : '#0f172a',
                                 background: isInputDisabled ? '#f1f5f9' : '#fff',
                                 outline: 'none',
+                                transition: 'all 0.15s ease',
+                              }}
+                              onFocus={(e) => {
+                                if (!isInputDisabled) {
+                                  e.currentTarget.style.borderColor = '#6366f1';
+                                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15)';
+                                }
+                              }}
+                              onBlur={(e) => {
+                                e.currentTarget.style.borderColor = '#cbd5e1';
+                                e.currentTarget.style.boxShadow = 'none';
                               }}
                             />
                             {isExamSourced && (
@@ -319,7 +330,8 @@ export const MarkEntryGrid: React.FC = () => {
                                 type="button"
                                 onClick={() => handleToggleOverride(a.id, s.id)}
                                 title={isOverridden ? 'Authorized override active (INT-04)' : 'Exam-sourced mark locked. Click to enable authorized manual override.'}
-                                className="ml-1 text-slate-500 hover:text-slate-800"
+                                className="ml-1 text-slate-500 hover:text-slate-800 cursor-pointer"
+                                style={{ background: 'none', border: 'none', padding: '4px' }}
                               >
                                 {isOverridden ? <Unlock className="w-3.5 h-3.5 text-amber-600" /> : <Lock className="w-3.5 h-3.5 text-blue-600" />}
                               </button>
@@ -334,7 +346,27 @@ export const MarkEntryGrid: React.FC = () => {
                           disabled={gridData.isLocked}
                           value={statusVal}
                           onChange={(e) => handleStatusChange(a.id, s.id, e.target.value)}
-                          className="text-[10px] border border-slate-200 rounded px-1 py-1 bg-white text-slate-700"
+                          style={{
+                            fontSize: '11px',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '6px',
+                            padding: '4px 8px',
+                            background: gridData.isLocked ? '#f1f5f9' : '#fff',
+                            color: '#0f172a',
+                            cursor: gridData.isLocked ? 'not-allowed' : 'pointer',
+                            outline: 'none',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onFocus={(e) => {
+                            if (!gridData.isLocked) {
+                              e.currentTarget.style.borderColor = '#6366f1';
+                              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15)';
+                            }
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = '#cbd5e1';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         >
                           <option value="scored">Score</option>
                           <option value="absent">Absent</option>
