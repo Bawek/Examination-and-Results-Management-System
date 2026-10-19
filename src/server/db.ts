@@ -408,6 +408,12 @@ export async function initDatabase() {
 }
 
 async function seedInitialData(client: pg.PoolClient) {
+  // Skip seeding in test mode
+  if (process.env.NODE_ENV === 'test') {
+    console.log('Test mode: skipping seed data');
+    return;
+  }
+
   const usersCheck = await client.query('SELECT COUNT(*) FROM users');
   if (parseInt(usersCheck.rows[0].count, 10) > 0) {
     console.log('Database already contains records. Skipping seed.');
@@ -454,7 +460,9 @@ async function seedInitialData(client: pg.PoolClient) {
   const userIds: Record<string, number> = {};
   for (const u of users) {
     const res = await client.query(
-      `INSERT INTO users (username, email, password_hash, role, full_name) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      `INSERT INTO users (username, email, password_hash, role, full_name) VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (username) DO UPDATE SET email = EXCLUDED.email, full_name = EXCLUDED.full_name
+       RETURNING id`,
       [u.username, u.email, 'password123', u.role, u.full_name]
     );
     userIds[u.username] = res.rows[0].id;

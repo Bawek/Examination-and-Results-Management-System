@@ -88,6 +88,11 @@ export function generateCsrfToken(): string {
 }
 
 export function csrfProtection(req: Request, res: Response, next: NextFunction) {
+  // Skip CSRF for login endpoint (public authentication)
+  if (req.path === '/api/auth/login') {
+    return next();
+  }
+
   // Skip CSRF for GET requests and safe methods
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     // Generate and send CSRF token for GET requests
