@@ -3,7 +3,7 @@ import { query, pool } from './db.ts';
 import { calculateSectionResults } from './services/resultEngine.ts';
 import { syncExamToAssessment } from './services/examSync.ts';
 import bcrypt from 'bcryptjs';
-import { loginRateLimiter, trackLoginAttempt } from './middleware.ts';
+import { loginRateLimiter, trackLoginAttempt, getCsrfToken } from './middleware.ts';
 
 export const router = Router();
 
@@ -27,12 +27,52 @@ async function getUser(req: Request) {
   return null;
 }
 
-// Require authenticated session middleware
-function requireAuth(req: Request, res: Response, next: Function) {
-  if (!(req.session as any)?.userId) {
-    return res.status(401).json({ error: 'Not authenticated. Please log in.' });
+// Require an authenticated, still-active user. Loads the user from the DB on every
+// request so deactivated accounts lose access immediately, and attaches it as req.user.
+async function requireAuth(req: Request, res: Response, next: Function) {
+  try {
+    const user = await getUser(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Not authenticated. Please log in.' });
+    }
+    (req as any).user = user;
+    next();
+  } catch (err) {
+    next(err);
   }
-  next();
+}
+
+// Require one of the given roles. Must run after requireAuth.
+function requireRole(...roles: string[]) {
+  return (req: Request, res: Response, next: Function) => {
+    const user = (req as any).user;
+    if (!user || !roles.includes(user.role)) {
+      return res.status(403).json({ error: 'You do not have permission to perform this action.' });
+    }
+    next();
+  };
+}
+
+// Students may only touch their own attempts; admins/teachers may access any.
+async function canAccessAttempt(req: Request, attemptIdRaw: string): Promise<boolean> {
+  const user = (req as any).user;
+  if (!user) return false;
+  if (user.role === 'admin' || user.role === 'teacher') return true;
+  const attemptId = parseInt(attemptIdRaw, 10);
+  if (Number.isNaN(attemptId)) return false;
+  const own = await query(
+    `SELECT 1 FROM exam_attempts ea JOIN students s ON ea.student_id = s.id
+     WHERE ea.id = $1 AND s.user_id = $2`,
+    [attemptId, user.id]
+  );
+  return own.rows.length > 0;
+}
+
+// Never leak database internals (SQL, constraint names, etc.) to clients.
+function sendError(res: Response, err: any) {
+  console.error(err);
+  const isDbError = typeof err?.code === 'string' && (err.severity || err.routine || err.detail);
+  res.status(500).json({ error: isDbError ? 'Internal server error.' : (err?.message || 'Internal server error.') });
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -77,7 +117,10 @@ router.post('/auth/login', loginRateLimiter, trackLoginAttempt, async (req: Requ
       return res.status(401).json({ error: 'Invalid username or password.' });
     }
 
-    // Save session
+    // Save session (regenerate ID first to prevent session fixation)
+    await new Promise<void>((resolve, reject) =>
+      req.session.regenerate((err) => (err ? reject(err) : resolve()))
+    );
     (req.session as any).userId = user.id;
     (req.session as any).userRole = user.role;
 
@@ -94,7 +137,7 @@ router.post('/auth/login', loginRateLimiter, trackLoginAttempt, async (req: Requ
     const { password_hash, ...safeUser } = user;
     res.json({ user: safeUser });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
@@ -107,8 +150,24 @@ router.post('/auth/logout', (req: Request, res: Response) => {
   });
 });
 
+// Public liveness probe (no internal details)
+router.get('/health', (_req: Request, res: Response) => {
+  res.json({ status: 'ok' });
+});
+
+// ═════════════════════════════════════════════════════════════
+// Everything below this line requires a logged-in, active user.
+// Per-route requireRole(...) calls then restrict by role.
+// ═════════════════════════════════════════════════════════════
+router.use(requireAuth);
+
+// GET /api/auth/csrf — session-bound CSRF token for state-changing requests
+router.get('/auth/csrf', (req: Request, res: Response) => {
+  res.json({ token: getCsrfToken(req) });
+});
+
 // GET /api/auth/me  — requires session
-router.get('/auth/me', requireAuth, async (req: Request, res: Response) => {
+router.get('/auth/me', async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ error: 'Session expired. Please log in.' });
@@ -125,22 +184,22 @@ router.get('/auth/me', requireAuth, async (req: Request, res: Response) => {
     const { password_hash, ...safeUser } = user;
     res.json({ user: safeUser, ...extra });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // GET /api/auth/users-list  — admin only, returns safe user list
-router.get('/auth/users-list', requireAuth, async (req: Request, res: Response) => {
+router.get('/auth/users-list', requireRole('admin'), async (req: Request, res: Response) => {
   try {
     const users = await query('SELECT id, username, email, role, full_name, status, last_login FROM users ORDER BY id ASC');
     res.json(users.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // POST /api/auth/change-password  — user can change their own password (IAM-04)
-router.post('/auth/change-password', requireAuth, async (req: Request, res: Response) => {
+router.post('/auth/change-password', async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     if (!user) return res.status(401).json({ error: 'Not authenticated' });
@@ -184,14 +243,14 @@ router.post('/auth/change-password', requireAuth, async (req: Request, res: Resp
 
     res.json({ success: true, message: 'Password changed successfully.' });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // -------------------------------------------------------------
 // Dashboard Statistics
 // -------------------------------------------------------------
-router.get('/dashboard/stats', async (req: Request, res: Response) => {
+router.get('/dashboard/stats', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
 
@@ -246,7 +305,7 @@ router.get('/dashboard/stats', async (req: Request, res: Response) => {
       currentUserRole: user?.role
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
@@ -262,11 +321,11 @@ router.get('/settings', async (_req: Request, res: Response) => {
       gradingScales: scalesRes.rows
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
-router.post('/settings', async (req: Request, res: Response) => {
+router.post('/settings', requireRole('admin'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     const { institution_name, address, contact_email, contact_phone, timezone, pass_percentage, rounding_decimals, ranking_enabled } = req.body;
@@ -286,7 +345,7 @@ router.post('/settings', async (req: Request, res: Response) => {
 
     res.json({ success: true, message: 'Settings saved successfully' });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
@@ -298,7 +357,7 @@ router.get('/academic-years', async (_req: Request, res: Response) => {
     const yrs = await query('SELECT * FROM academic_years ORDER BY start_date DESC');
     res.json(yrs.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
@@ -312,7 +371,7 @@ router.get('/terms', async (_req: Request, res: Response) => {
     `);
     res.json(terms.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
@@ -322,7 +381,7 @@ router.get('/classes', async (_req: Request, res: Response) => {
     const sections = await query('SELECT * FROM sections ORDER BY section_name ASC');
     res.json({ classes: classes.rows, sections: sections.rows });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
@@ -331,11 +390,11 @@ router.get('/subjects', async (_req: Request, res: Response) => {
     const subjects = await query('SELECT * FROM subjects ORDER BY subject_name ASC');
     res.json(subjects.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
-router.post('/subjects', async (req: Request, res: Response) => {
+router.post('/subjects', requireRole('admin'), async (req: Request, res: Response) => {
   try {
     const { subject_code, subject_name, max_score, pass_score } = req.body;
     const result = await query(
@@ -344,7 +403,7 @@ router.post('/subjects', async (req: Request, res: Response) => {
     );
     res.json(result.rows[0]);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
@@ -363,14 +422,14 @@ router.get('/class-subjects', async (_req: Request, res: Response) => {
     `);
     res.json(cs.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // -------------------------------------------------------------
 // People: Students & Teachers
 // -------------------------------------------------------------
-router.get('/students', async (_req: Request, res: Response) => {
+router.get('/students', requireRole('admin', 'teacher'), async (_req: Request, res: Response) => {
   try {
     const students = await query(`
       SELECT s.*, c.name as class_name, sec.section_name, u.username,
@@ -384,11 +443,11 @@ router.get('/students', async (_req: Request, res: Response) => {
     `);
     res.json(students.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
-router.post('/students', async (req: Request, res: Response) => {
+router.post('/students', requireRole('admin'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     const { admission_no, first_name, last_name, gender, date_of_birth, guardian_name, guardian_phone, contact_email, class_id, section_id } = req.body;
@@ -405,11 +464,11 @@ router.post('/students', async (req: Request, res: Response) => {
 
     res.json(sRes.rows[0]);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
-router.get('/teachers', async (_req: Request, res: Response) => {
+router.get('/teachers', requireRole('admin', 'teacher'), async (_req: Request, res: Response) => {
   try {
     const teachers = await query(`
       SELECT t.*, u.username
@@ -419,17 +478,17 @@ router.get('/teachers', async (_req: Request, res: Response) => {
     `);
     res.json(teachers.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // -------------------------------------------------------------
 // Question Bank
 // -------------------------------------------------------------
-router.get('/questions', async (req: Request, res: Response) => {
+router.get('/questions', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
-    const isStudent = user?.role === 'student';
+    const isStudent = user?.role !== 'admin' && user?.role !== 'teacher'; // fail closed: keys only for staff
 
     // Anti-leakage: if student, do NOT include answer_keys! (QBK-10)
     const selectFields = isStudent
@@ -445,11 +504,11 @@ router.get('/questions', async (req: Request, res: Response) => {
 
     res.json(qRes.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
-router.post('/questions', async (req: Request, res: Response) => {
+router.post('/questions', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     const { subject_id, category_id, type, prompt, marks, difficulty, options, answer_keys, rubric, explanation } = req.body;
@@ -478,14 +537,14 @@ router.post('/questions', async (req: Request, res: Response) => {
 
     res.json(resQ.rows[0]);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // -------------------------------------------------------------
 // Exam Management (OEMS)
 // -------------------------------------------------------------
-router.get('/exams', async (_req: Request, res: Response) => {
+router.get('/exams', requireRole('admin', 'teacher'), async (_req: Request, res: Response) => {
   try {
     const exams = await query(`
       SELECT e.*, sub.subject_name, sub.subject_code, c.name as class_name, sec.section_name,
@@ -503,14 +562,14 @@ router.get('/exams', async (_req: Request, res: Response) => {
     `);
     res.json(exams.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 router.get('/exams/:id', async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
-    const isStudent = user?.role === 'student';
+    const isStudent = user?.role !== 'admin' && user?.role !== 'teacher'; // fail closed: keys only for staff
 
     const examRes = await query(`
       SELECT e.*, sub.subject_name, sub.subject_code, c.name as class_name, sec.section_name,
@@ -544,11 +603,11 @@ router.get('/exams/:id', async (req: Request, res: Response) => {
       questions: qRes.rows
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
-router.post('/exams', async (req: Request, res: Response) => {
+router.post('/exams', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     const {
@@ -629,12 +688,12 @@ router.post('/exams', async (req: Request, res: Response) => {
 
     res.json({ ...exRes.rows[0], total_marks: totalMarks });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // Release exam results to candidates (independent from term publication! INT-05)
-router.post('/exams/:id/release', async (req: Request, res: Response) => {
+router.post('/exams/:id/release', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     const examId = parseInt(req.params.id, 10);
@@ -669,14 +728,14 @@ router.post('/exams/:id/release', async (req: Request, res: Response) => {
 
     res.json({ success: true, message: 'Exam results released to candidates successfully' });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // -------------------------------------------------------------
 // Candidate Delivery (DLV-01 to DLV-11)
 // -------------------------------------------------------------
-router.get('/candidate/available-exams', async (req: Request, res: Response) => {
+router.get('/candidate/available-exams', requireRole('student', 'admin'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     // Find student record
@@ -718,11 +777,11 @@ router.get('/candidate/available-exams', async (req: Request, res: Response) => 
 
     res.json(examsRes.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
-router.post('/candidate/start-attempt', async (req: Request, res: Response) => {
+router.post('/candidate/start-attempt', requireRole('student', 'admin'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     const { examId, studentId: requestedStudentId } = req.body;
@@ -793,13 +852,16 @@ router.post('/candidate/start-attempt', async (req: Request, res: Response) => {
       extraMinutesGranted: extraMinutes
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // Fetch active attempt details & questions (DLV-04)
 router.get('/candidate/attempts/:attemptId', async (req: Request, res: Response) => {
   try {
+    if (!(await canAccessAttempt(req, req.params.attemptId))) {
+      return res.status(403).json({ error: 'Access denied: this attempt does not belong to you.' });
+    }
     const attemptId = req.params.attemptId;
     const attRes = await query(`
       SELECT ea.*, e.title as exam_title, e.instructions, e.total_marks as exam_total,
@@ -836,13 +898,16 @@ router.get('/candidate/attempts/:attemptId', async (req: Request, res: Response)
       savedAnswers: answersRes.rows
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // Autosave candidate response (DLV-06)
-router.post('/candidate/attempts/:attemptId/save', async (req: Request, res: Response) => {
+router.post('/candidate/attempts/:attemptId/save', requireRole('student', 'admin'), async (req: Request, res: Response) => {
   try {
+    if (!(await canAccessAttempt(req, req.params.attemptId))) {
+      return res.status(403).json({ error: 'Access denied: this attempt does not belong to you.' });
+    }
     const attemptId = parseInt(req.params.attemptId, 10);
     const { questionId, responseData } = req.body;
 
@@ -878,13 +943,16 @@ router.post('/candidate/attempts/:attemptId/save', async (req: Request, res: Res
 
     res.json({ success: true, savedAt: new Date().toISOString() });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // Submit candidate attempt & auto-score objective items (DLV-08, DLV-09, GRD-01)
-router.post('/candidate/attempts/:attemptId/submit', async (req: Request, res: Response) => {
+router.post('/candidate/attempts/:attemptId/submit', requireRole('student', 'admin'), async (req: Request, res: Response) => {
   try {
+    if (!(await canAccessAttempt(req, req.params.attemptId))) {
+      return res.status(403).json({ error: 'Access denied: this attempt does not belong to you.' });
+    }
     const attemptId = parseInt(req.params.attemptId, 10);
     const { reason } = req.body;
 
@@ -1016,14 +1084,14 @@ router.post('/candidate/attempts/:attemptId/submit', async (req: Request, res: R
         : 'Exam completed and evaluated successfully.'
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // -------------------------------------------------------------
 // Manual Grading Queue (GRD-01 to GRD-08)
 // -------------------------------------------------------------
-router.get('/grading/queue', async (_req: Request, res: Response) => {
+router.get('/grading/queue', requireRole('admin', 'teacher'), async (_req: Request, res: Response) => {
   try {
     const queue = await query(`
       SELECT sa.id as answer_id, sa.attempt_id, sa.question_id, sa.response_data,
@@ -1043,11 +1111,11 @@ router.get('/grading/queue', async (_req: Request, res: Response) => {
 
     res.json(queue.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
-router.post('/grading/grade-item', async (req: Request, res: Response) => {
+router.post('/grading/grade-item', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     const { answerId, awardedMarks, feedback } = req.body;
@@ -1107,26 +1175,26 @@ router.post('/grading/grade-item', async (req: Request, res: Response) => {
       percentage
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // Manual trigger for Exam-to-Marks synchronization (INT-01 to INT-07)
-router.post('/exams/:id/sync-to-marks', async (req: Request, res: Response) => {
+router.post('/exams/:id/sync-to-marks', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     const examId = parseInt(req.params.id, 10);
     const result = await syncExamToAssessment(examId, user?.id);
     res.json(result);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // -------------------------------------------------------------
 // Assessments, Marks & Results Module (SRMS)
 // -------------------------------------------------------------
-router.get('/assessments', async (req: Request, res: Response) => {
+router.get('/assessments', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const { classSubjectId, termId } = req.query;
     let sql = `
@@ -1152,11 +1220,11 @@ router.get('/assessments', async (req: Request, res: Response) => {
     const assmts = await query(sql, params);
     res.json(assmts.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
-router.post('/assessments', async (req: Request, res: Response) => {
+router.post('/assessments', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     const { class_subject_id, term_id, name, max_score, weight, due_date, source_type, exam_id } = req.body;
@@ -1200,12 +1268,12 @@ router.post('/assessments', async (req: Request, res: Response) => {
 
     res.json(aRes.rows[0]);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // Mark Entry Grid Data (MRK-02, MRK-03)
-router.get('/marks/grid', async (req: Request, res: Response) => {
+router.get('/marks/grid', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const classSubjectId = parseInt(req.query.classSubjectId as string, 10);
     const termId = parseInt(req.query.termId as string, 10);
@@ -1269,12 +1337,12 @@ router.get('/marks/grid', async (req: Request, res: Response) => {
       marksMap
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // Save / Submit marks (MRK-04, MRK-05, MRK-10)
-router.post('/marks/save', async (req: Request, res: Response) => {
+router.post('/marks/save', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     const { entries, submitForReview, reason } = req.body;
@@ -1388,12 +1456,12 @@ router.post('/marks/save', async (req: Request, res: Response) => {
       client.release();
     }
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // Results Engine: Section Results Summary (RES-01 to RES-10)
-router.get('/results/section-summary', async (req: Request, res: Response) => {
+router.get('/results/section-summary', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const termId = parseInt(req.query.termId as string, 10);
     const sectionId = parseInt(req.query.sectionId as string, 10);
@@ -1419,12 +1487,12 @@ router.get('/results/section-summary', async (req: Request, res: Response) => {
       publication
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // Publication & Locking Workflow (PUB-01 to PUB-07)
-router.post('/results/publication-action', async (req: Request, res: Response) => {
+router.post('/results/publication-action', requireRole('admin', 'teacher'), async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     const { termId, sectionId, action, reason } = req.body;
@@ -1483,7 +1551,7 @@ router.post('/results/publication-action', async (req: Request, res: Response) =
 
     res.json({ success: true, status: newStatus });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
@@ -1543,14 +1611,14 @@ router.get('/reports/report-card/:studentId/:termId', async (req: Request, res: 
       isOfficialPublished: pubStatus === 'published' || pubStatus === 'locked'
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // -------------------------------------------------------------
 // Audit Logs (ADM-01, ADM-02, ADM-05)
 // -------------------------------------------------------------
-router.get('/audit-logs', async (req: Request, res: Response) => {
+router.get('/audit-logs', requireRole('admin'), async (req: Request, res: Response) => {
   try {
     const { action, entityType, limit } = req.query;
     let sql = `
@@ -1573,14 +1641,14 @@ router.get('/audit-logs', async (req: Request, res: Response) => {
     const logs = await query(sql, params);
     res.json(logs.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 });
 
 // -------------------------------------------------------------
 // System Health & Database Status
 // -------------------------------------------------------------
-router.get('/system/health', async (_req: Request, res: Response) => {
+router.get('/system/health', requireRole('admin'), async (_req: Request, res: Response) => {
   try {
     const ping = await query('SELECT NOW() as db_time, current_database() as db_name, version() as version');
     res.json({

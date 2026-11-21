@@ -8,8 +8,8 @@ import {
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('password123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +83,7 @@ export const LoginPage: React.FC = () => {
               }}
             >
               <img
-                src={crestImage}
+                src={(crestImage as any).src ?? (crestImage as any)}
                 alt="Apex Academy Crest"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -165,9 +165,6 @@ export const LoginPage: React.FC = () => {
                 >
                   Password
                 </label>
-                <span style={{ fontSize: '12px', color: '#64748b', letterSpacing: '0.01em' }}>
-                  Default: <code style={{ color: '#4338ca', background: '#ede9fe', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>password123</code>
-                </span>
               </div>
               <div style={{ position: 'relative' }}>
                 <Input

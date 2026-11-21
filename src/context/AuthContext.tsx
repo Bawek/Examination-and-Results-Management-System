@@ -48,6 +48,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchSession();
   }, []);
 
+  // Any API call that comes back 401 means the session is gone: return to login.
+  useEffect(() => {
+    const onUnauthorized = () => {
+      setCurrentUser(null);
+      setStudentProfile(null);
+      setTeacherProfile(null);
+    };
+    window.addEventListener('ierms:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('ierms:unauthorized', onUnauthorized);
+  }, []);
+
   const login = async (username: string, password: string) => {
     const res = await api.login({ username, password });
     if (res && res.user) {
@@ -66,6 +77,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn('Logout request failed:', err);
     }
     setCurrentUser(null);
+    setStudentProfile(null);
+    setTeacherProfile(null);
   };
 
   return (

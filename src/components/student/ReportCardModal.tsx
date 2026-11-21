@@ -86,7 +86,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({ studentId, ter
           <div className="text-center pb-5 border-b-2 border-slate-900">
             <div className="flex items-center justify-center gap-3 mb-2">
               <img
-                src={crestImage}
+                src={(crestImage as any).src ?? (crestImage as any)}
                 alt="Institutional Crest"
                 className="w-14 h-14 object-contain"
                 referrerPolicy="no-referrer"

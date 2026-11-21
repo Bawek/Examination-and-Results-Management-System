@@ -1,14 +1,21 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 dotenv.config();
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_YAOXjDG61TIf@ep-wispy-glade-b5dmmm4v-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL is not set. Define it in your environment (.env is git-ignored).');
+}
 
 export const pool = new pg.Pool({
   connectionString,
+  // Verify the server certificate. Only disable for local dev with a self-signed cert:
+  // DB_SSL_REJECT_UNAUTHORIZED=false
   ssl: {
-    rejectUnauthorized: false
+    rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
   },
   max: 10,
   idleTimeoutMillis: 30000,
@@ -457,13 +464,20 @@ async function seedInitialData(client: pg.PoolClient) {
     { username: 'stu.aaliyah', email: 'aaliyah.k@apex-ier.edu', role: 'student', full_name: 'Aaliyah Khan' },
   ];
 
+  // Never ship a known default password: use SEED_PASSWORD or a random one-time value.
+  const seedPassword = process.env.SEED_PASSWORD || crypto.randomBytes(9).toString('base64url');
+  const seedHash = await bcrypt.hash(seedPassword, 12);
+  if (!process.env.SEED_PASSWORD) {
+    console.warn(`[seed] Generated one-time password for all seeded accounts: ${seedPassword}  (set SEED_PASSWORD to choose your own)`);
+  }
+
   const userIds: Record<string, number> = {};
   for (const u of users) {
     const res = await client.query(
       `INSERT INTO users (username, email, password_hash, role, full_name) VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (username) DO UPDATE SET email = EXCLUDED.email, full_name = EXCLUDED.full_name
        RETURNING id`,
-      [u.username, u.email, 'password123', u.role, u.full_name]
+      [u.username, u.email, seedHash, u.role, u.full_name]
     );
     userIds[u.username] = res.rows[0].id;
   }

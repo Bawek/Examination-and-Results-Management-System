@@ -117,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, sidebar
               flexShrink: 0,
             }}>
               <img
-                src={crestImage}
+                src={(crestImage as any).src ?? (crestImage as any)}
                 alt="Apex Academy Crest"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
