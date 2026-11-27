@@ -135,12 +135,18 @@ function NavigationProgress({ isNavigating }: NavigationProgressProps) {
 interface PageWrapperProps { children: React.ReactNode; tabKey: string; }
 function PageWrapper({ children, tabKey }: PageWrapperProps) {
   const [visible, setVisible] = useState(false);
+  const [animationComplete, setAnimationComplete] = useState(false);
   
   useEffect(() => {
     setVisible(false);
+    setAnimationComplete(false);
     
     const id = requestAnimationFrame(() => {
-      setTimeout(() => setVisible(true), 150);
+      setTimeout(() => {
+        setVisible(true);
+        // Remove transform after animation completes to fix modal positioning
+        setTimeout(() => setAnimationComplete(true), 400);
+      }, 150);
     });
     
     return () => cancelAnimationFrame(id);
@@ -151,7 +157,8 @@ function PageWrapper({ children, tabKey }: PageWrapperProps) {
       key={tabKey}
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0) scale(1)' : 'translateY(16px) scale(0.98)',
+        // Remove transform after animation to avoid breaking position:fixed children (modals)
+        transform: animationComplete ? 'none' : (visible ? 'translateY(0) scale(1)' : 'translateY(16px) scale(0.98)'),
         transition: 'opacity 0.4s cubic-bezier(0.4,0,0.2,1), transform 0.4s cubic-bezier(0.34,1.56,0.64,1)',
       }}
     >

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../services/api.ts';
-import { Button, Badge, Card } from '../ui/index.ts';
+import { Button, Badge, Card } from '../ui/index.tsx';
 import { Clock, CheckCircle2, Flag, ArrowLeft, ArrowRight, Save, Send } from 'lucide-react';
 import { showToast } from '../../lib/toast';
 

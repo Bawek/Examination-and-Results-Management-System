@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api.ts';
 import crestImage from '../../assets/images/apex_academy_crest_1790666516021.jpg';
-import { Badge } from '../ui/index.ts';
+import { Badge } from '../ui/index.tsx';
 import { Printer, X, Award } from 'lucide-react';
 
 interface ReportCardModalProps {

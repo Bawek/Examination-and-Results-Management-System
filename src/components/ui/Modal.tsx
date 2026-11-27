@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -54,9 +55,10 @@ export const Modal: React.FC<ModalProps> = ({
     '2xl': 'max-w-2xl',
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-10 pb-10 px-4 bg-black/50 overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
+      style={{ animation: 'fadeIn 0.2s ease-out' }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -66,9 +68,13 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         ref={modalRef}
         className={cn(
-          "w-full bg-white border border-gray-200 rounded-lg shadow-xl animate-in zoom-in-95 fade-in duration-300 max-h-[90vh] flex flex-col",
+          "w-full bg-white rounded-lg shadow-xl flex flex-col",
           sizeClasses[size]
         )}
+        style={{ 
+          maxHeight: 'calc(100vh - 2rem)',
+          animation: 'fadeInScale 0.3s ease-out'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -83,6 +89,7 @@ export const Modal: React.FC<ModalProps> = ({
               <button
                 onClick={onClose}
                 className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                type="button"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -90,13 +97,18 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         )}
 
-        {/* Content */}
-        <div className="px-6 py-4 overflow-y-auto flex-1">
-          {children}
+        {/* Content - will scroll if needed */}
+        <div className="overflow-y-auto flex-1 min-h-0">
+          <div className="px-6 py-4">
+            {children}
+          </div>
         </div>
       </div>
     </div>
   );
+
+  // Render modal to document.body using portal
+  return createPortal(modalContent, document.body);
 };
 
 interface ModalFooterProps {
@@ -106,7 +118,7 @@ interface ModalFooterProps {
 
 export const ModalFooter: React.FC<ModalFooterProps> = ({ children, className }) => (
   <div className={cn(
-    "flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-lg",
+    "flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 flex-shrink-0 -mx-6 -mb-4 mt-4 rounded-b-lg",
     className
   )}>
     {children}

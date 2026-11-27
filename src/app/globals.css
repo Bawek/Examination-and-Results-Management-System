@@ -8,7 +8,9 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    
+    /* Match brand colors to actual UI (indigo) */
+    --primary: 238 83.5% 66.7%;  /* #6366f1 indigo-500 */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -20,19 +22,21 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 238 83.5% 66.7%;  /* Match primary */
     --radius: 0.5rem;
 
+    /* Brand color tokens - indigo scale */
     --brand-50:  #eef2ff;
     --brand-100: #e0e7ff;
     --brand-200: #c7d2fe;
     --brand-300: #a5b4fc;
     --brand-400: #818cf8;
-    --brand-500: #6366f1;
+    --brand-500: #6366f1;  /* Primary brand color */
     --brand-600: #4f46e5;
     --brand-700: #4338ca;
     --brand-800: #3730a3;
     --brand-900: #312e81;
+    --brand-950: #1e1b4b;
   }
 
   * {
@@ -66,6 +70,33 @@
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
@@ -88,11 +119,30 @@
   width: 40px;
   height: 40px;
   border: 3px solid rgba(99, 102, 241, 0.15);
-  border-top-color: #6366f1;
+  border-top-color: var(--brand-500);
   border-radius: 50%;
   animation: spin-smooth 0.75s linear infinite;
 }
 
 .mono {
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
 }

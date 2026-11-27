@@ -3,7 +3,7 @@ import { api } from '../../services/api.ts';
 import { useAuth } from '../../context/AuthContext.tsx';
 import { ExamDeliveryRoom } from './ExamDeliveryRoom.tsx';
 import { ReportCardModal } from './ReportCardModal.tsx';
-import { Button, Card, Badge } from '../ui/index.ts';
+import { Button, Card, Badge } from '../ui/index.tsx';
 import { Clock, Play, FileText, CheckCircle2 } from 'lucide-react';
 import { showToast } from '../../lib/toast';
 

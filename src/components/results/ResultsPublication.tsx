@@ -3,7 +3,7 @@ import { api } from '../../services/api.ts';
 import { useAuth } from '../../context/AuthContext.tsx';
 import { Term, SchoolClass, Section } from '../../types/index.ts';
 import { ReportCardModal } from '../student/ReportCardModal.tsx';
-import { Button, Select, Badge, StatusBadge, Modal, ModalFooter, Textarea } from '../ui/index.ts';
+import { Button, Select, Badge, StatusBadge, Modal, ModalFooter, Textarea } from '../ui/index.tsx';
 import { CheckCircle, Lock, Unlock, Send, FileText, Download, ShieldAlert } from 'lucide-react';
 import { showToast } from '../../lib/toast';
 
