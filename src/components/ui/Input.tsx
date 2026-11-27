@@ -147,4 +147,4 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
 Select.displayName = "Select"
 
 export { Input, Textarea, Select }
-export type { InputProps as InputPropsType, TextareaProps, SelectProps }
+export type { InputProps as InputPropsType }

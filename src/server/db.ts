@@ -22,15 +22,44 @@ export const pool = new pg.Pool({
   connectionTimeoutMillis: 10000
 });
 
+const globalForDb = globalThis as unknown as {
+  __iermsDbInitPromise?: Promise<void>;
+  __iermsDbReady?: boolean;
+};
+
+export async function ensureDatabaseInitialized(): Promise<void> {
+  if (globalForDb.__iermsDbReady) return;
+  if (!globalForDb.__iermsDbInitPromise) {
+    globalForDb.__iermsDbInitPromise = initDatabase()
+      .then(() => {
+        globalForDb.__iermsDbReady = true;
+      })
+      .catch((err) => {
+        globalForDb.__iermsDbInitPromise = undefined;
+        throw err;
+      });
+  }
+  await globalForDb.__iermsDbInitPromise;
+}
+
 export async function query(text: string, params?: any[]) {
-  const start = Date.now();
+  if (process.env.NODE_ENV !== 'test') {
+    await ensureDatabaseInitialized();
+  }
   try {
     const res = await pool.query(text, params);
     return res;
   } catch (err) {
-    console.error('PostgreSQL query error:', { text, error: (err as Error).message });
+    console.error('PostgreSQL query error:', (err as Error).message);
     throw err;
   }
+}
+
+export async function getClient() {
+  if (process.env.NODE_ENV !== 'test') {
+    await ensureDatabaseInitialized();
+  }
+  return pool.connect();
 }
 
 export async function initDatabase() {

@@ -302,8 +302,17 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, sidebar
                     </div>
                   </div>
 
-                  {/* Log Out button */}
-                  <div style={{ padding: '10px' }}>
+                  {/* Account Actions */}
+                  <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <Button
+                      variant="ghost"
+                      fullWidth
+                      onClick={() => { setShowUserMenu(false); setShowChangePassword(true); }}
+                      icon={<KeyRound size={14} />}
+                      style={{ justifyContent: 'flex-start', padding: '10px 14px' }}
+                    >
+                      Change Password
+                    </Button>
                     <Button
                       variant="ghost"
                       fullWidth
@@ -320,6 +329,11 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, sidebar
           </div>
         </div>
       </div>
+
+      <ChangePasswordModal
+        isOpen={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+      />
     </header>
   );
 };

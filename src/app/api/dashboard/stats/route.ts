@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/session';
 import { query } from '@/server/db';
+import { sendError } from '@/lib/api-utils';
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await requireRole(['admin', 'teacher'])(request);
-    
-    if (auth instanceof NextResponse) {
-      return auth;
-    }
+    const auth = await requireRole(['admin', 'teacher', 'registrar', 'invigilator'])(request);
+    if (auth instanceof NextResponse) return auth;
 
     const { user } = auth;
 
@@ -19,7 +17,7 @@ export async function GET(request: NextRequest) {
       activeExamsCount,
       pendingGradingCount,
       publicationsCount,
-      auditLogsCount
+      auditLogsCount,
     ] = await Promise.all([
       query("SELECT COUNT(*) FROM students WHERE status = 'active'"),
       query("SELECT COUNT(*) FROM teachers WHERE status = 'active'"),
@@ -27,7 +25,7 @@ export async function GET(request: NextRequest) {
       query("SELECT COUNT(*) FROM exams WHERE status = 'published' AND start_at <= NOW() AND end_at >= NOW()"),
       query("SELECT COUNT(*) FROM student_answers WHERE grading_status = 'ungraded'"),
       query("SELECT COUNT(*) FROM term_result_publications WHERE status = 'published'"),
-      query('SELECT COUNT(*) FROM audit_logs')
+      query('SELECT COUNT(*) FROM audit_logs'),
     ]);
 
     const recentExams = await query(`
@@ -56,17 +54,13 @@ export async function GET(request: NextRequest) {
         activeExams: parseInt(activeExamsCount.rows[0].count, 10),
         pendingGrading: parseInt(pendingGradingCount.rows[0].count, 10),
         publishedResults: parseInt(publicationsCount.rows[0].count, 10),
-        auditLogs: parseInt(auditLogsCount.rows[0].count, 10)
+        auditLogs: parseInt(auditLogsCount.rows[0].count, 10),
       },
       recentExams: recentExams.rows,
       recentLogs: recentLogs.rows,
-      currentUserRole: user?.role
+      currentUserRole: user?.role,
     });
-  } catch (error: any) {
-    console.error('Dashboard stats error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error.' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return sendError(error);
   }
 }

@@ -33,11 +33,19 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {
   dot?: boolean
+  size?: 'sm' | 'md' | 'lg'
 }
 
-function Badge({ className, variant, dot, children, ...props }: BadgeProps) {
+function Badge({ className, variant, dot, size, children, ...props }: BadgeProps) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props}>
+    <div
+      className={cn(
+        badgeVariants({ variant }),
+        size === 'sm' && 'px-1.5 py-0 text-[10px]',
+        className
+      )}
+      {...props}
+    >
       {dot && <span className="mr-1 h-1.5 w-1.5 rounded-full bg-current" />}
       {children}
     </div>

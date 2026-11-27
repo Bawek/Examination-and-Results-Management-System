@@ -14,28 +14,45 @@ export const Container: React.FC<ContainerProps> = ({ children, className, ...pr
 interface FlexProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   direction?: 'row' | 'col';
-  align?: 'start' | 'center' | 'end';
-  justify?: 'start' | 'center' | 'end' | 'between';
-  gap?: string;
+  align?: 'start' | 'flex-start' | 'center' | 'end' | 'flex-end' | 'stretch' | 'baseline';
+  justify?: 'start' | 'flex-start' | 'center' | 'end' | 'flex-end' | 'between' | 'space-between';
+  gap?: string | number;
+  wrap?: boolean;
 }
 
-export const Flex: React.FC<FlexProps> = ({ 
-  children, 
-  direction = 'row', 
-  align, 
+export const Flex: React.FC<FlexProps> = ({
+  children,
+  direction = 'row',
+  align,
   justify,
   gap,
+  wrap,
   className,
-  ...props 
+  style,
+  ...props
 }) => {
-  const alignClass = align ? `items-${align}` : '';
-  const justifyClass = justify ? `justify-${justify}` : '';
-  const directionClass = direction === 'col' ? 'flex-col' : 'flex-row';
-  const gapClass = gap ? `gap-${gap}` : '';
-  
+  const alignValue = align === 'start' ? 'flex-start' : align === 'end' ? 'flex-end' : align;
+  const justifyValue =
+    justify === 'between'
+      ? 'space-between'
+      : justify === 'start'
+      ? 'flex-start'
+      : justify === 'end'
+      ? 'flex-end'
+      : justify;
+
+  const gapStyle = typeof gap === 'number' ? `${gap}px` : gap;
+
   return (
-    <div 
-      className={cn("flex", directionClass, alignClass, justifyClass, gapClass, className)} 
+    <div
+      className={cn('flex', direction === 'col' ? 'flex-col' : 'flex-row', className)}
+      style={{
+        alignItems: alignValue,
+        justifyContent: justifyValue,
+        gap: gapStyle,
+        flexWrap: wrap ? 'wrap' : undefined,
+        ...style,
+      }}
       {...props}
     >
       {children}
@@ -46,23 +63,38 @@ export const Flex: React.FC<FlexProps> = ({
 interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   cols?: number;
-  gap?: string;
+  columns?: number | string;
+  gap?: string | number;
 }
 
-export const Grid: React.FC<GridProps> = ({ 
-  children, 
-  cols = 1, 
-  gap = '4',
+export const Grid: React.FC<GridProps> = ({
+  children,
+  cols,
+  columns,
+  gap = 16,
   className,
-  ...props 
-}) => (
-  <div 
-    className={cn(`grid grid-cols-${cols} gap-${gap}`, className)} 
-    {...props}
-  >
-    {children}
-  </div>
-);
+  style,
+  ...props
+}) => {
+  const colSpec = columns ?? cols ?? 1;
+  const gridTemplateColumns =
+    typeof colSpec === 'number' ? `repeat(${colSpec}, minmax(0, 1fr))` : colSpec;
+  const gapStyle = typeof gap === 'number' ? `${gap}px` : gap;
+
+  return (
+    <div
+      className={cn('grid', className)}
+      style={{
+        gridTemplateColumns,
+        gap: gapStyle,
+        ...style,
+      }}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
 
 interface SectionProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
@@ -84,7 +116,7 @@ export const Spacer: React.FC<SpacerProps> = ({ size = 'md' }) => {
     md: 'h-8',
     lg: 'h-16',
   };
-  
+
   return <div className={sizeMap[size]} />;
 };
 
