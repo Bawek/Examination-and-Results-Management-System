@@ -3,6 +3,7 @@ import { api } from '../../services/api.ts';
 import { SchoolSettings, GradingScale } from '../../types/index.ts';
 import { Save, Check } from 'lucide-react';
 import { Button, Input, Select } from '../ui';
+import { showToast } from '../../lib/toast';
 
 export const InstitutionSetup: React.FC = () => {
   const [settings, setSettings] = useState<Partial<SchoolSettings>>({});
@@ -17,6 +18,9 @@ export const InstitutionSetup: React.FC = () => {
         setSettings(data.settings);
         setScales(data.gradingScales);
       })
+      .catch((err) => {
+        showToast.error('Failed to load institution settings');
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -25,10 +29,22 @@ export const InstitutionSetup: React.FC = () => {
     try {
       setSaving(true);
       await api.updateSettings(settings);
+      
+      // Reload settings from database to confirm save
+      const freshData = await api.getSettings();
+      setSettings(freshData.settings);
+      setScales(freshData.gradingScales);
+      
+      showToast.success('Settings successfully saved to database');
       setSavedMessage('Settings successfully saved to PostgreSQL database.');
       setTimeout(() => setSavedMessage(''), 4000);
+      
+      // Trigger page reload to update header (optional but ensures consistency)
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (err: any) {
-      alert(`Save failed: ${err.message}`);
+      showToast.error(`Save failed: ${err.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -69,6 +85,7 @@ export const InstitutionSetup: React.FC = () => {
               type="text"
               value={settings.institution_name || ''}
               onChange={(e) => setSettings({ ...settings, institution_name: e.target.value })}
+              autoComplete="off"
               fullWidth
               required
             />

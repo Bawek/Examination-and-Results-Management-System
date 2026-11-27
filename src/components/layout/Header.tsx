@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext.tsx';
 import { Role } from '../../types/index.ts';
 import { Button, Badge } from '../ui';
 import { ChangePasswordModal } from '../auth/ChangePasswordModal';
+import { api } from '../../services/api.ts';
 import crestImage from '../../assets/images/apex_academy_crest_1790666516021.jpg';
 import {
   ChevronDown, ChevronLeft, LogOut, Menu, KeyRound
@@ -36,7 +37,35 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, sidebar
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [schoolName, setSchoolName] = useState('Apex IERMS');
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Fetch school name from settings
+  useEffect(() => {
+    api.getSettings()
+      .then((data) => {
+        if (data.settings?.institution_name) {
+          // Extract short name (first part before comma or full name if short)
+          const fullName = data.settings.institution_name;
+          const shortName = fullName.split(',')[0].trim();
+          // If too long, use abbreviation
+          if (shortName.length > 25) {
+            const words = shortName.split(' ');
+            if (words.length > 1) {
+              setSchoolName(words.map(w => w[0]).join('') + ' IERMS');
+            } else {
+              setSchoolName(shortName.substring(0, 20) + '...');
+            }
+          } else {
+            setSchoolName(shortName);
+          }
+        }
+      })
+      .catch(() => {
+        // Keep default if fetch fails
+        setSchoolName('Apex IERMS');
+      });
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -125,8 +154,14 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, sidebar
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
               <span style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a' }}>
-                Apex{' '}
-                <span style={{ color: '#4f46e5' }}>IERMS</span>
+                {schoolName.includes('IERMS') ? (
+                  <>
+                    {schoolName.split(' IERMS')[0]}{' '}
+                    <span style={{ color: '#4f46e5' }}>IERMS</span>
+                  </>
+                ) : (
+                  <span style={{ color: '#4f46e5' }}>{schoolName}</span>
+                )}
               </span>
               <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 500, marginTop: '2px', letterSpacing: '0.02em' }}>
                 Integrated Examination &amp; Results System

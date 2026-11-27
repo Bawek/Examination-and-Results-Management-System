@@ -38,23 +38,46 @@ export async function POST(request: NextRequest) {
       ranking_enabled,
     } = body;
 
-    await query(
-      `UPDATE school_settings
-       SET institution_name = $1, address = $2, contact_email = $3, contact_phone = $4,
-           timezone = $5, pass_percentage = $6, rounding_decimals = $7, ranking_enabled = $8,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = 1`,
-      [
-        institution_name,
-        address,
-        contact_email,
-        contact_phone,
-        timezone,
-        pass_percentage,
-        rounding_decimals,
-        ranking_enabled,
-      ]
-    );
+    // Check if settings row exists, if not insert it
+    const checkRes = await query('SELECT id FROM school_settings LIMIT 1');
+    
+    if (checkRes.rows.length === 0) {
+      // Insert new settings row
+      await query(
+        `INSERT INTO school_settings (id, institution_name, address, contact_email, contact_phone, timezone, pass_percentage, rounding_decimals, ranking_enabled)
+         VALUES (1, $1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          institution_name,
+          address,
+          contact_email,
+          contact_phone,
+          timezone,
+          pass_percentage,
+          rounding_decimals,
+          ranking_enabled,
+        ]
+      );
+    } else {
+      // Update existing settings
+      await query(
+        `UPDATE school_settings
+         SET institution_name = $1, address = $2, contact_email = $3, contact_phone = $4,
+             timezone = $5, pass_percentage = $6, rounding_decimals = $7, ranking_enabled = $8,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $9`,
+        [
+          institution_name,
+          address,
+          contact_email,
+          contact_phone,
+          timezone,
+          pass_percentage,
+          rounding_decimals,
+          ranking_enabled,
+          checkRes.rows[0].id,
+        ]
+      );
+    }
 
     await query(
       `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, reason)
@@ -62,7 +85,14 @@ export async function POST(request: NextRequest) {
       [user?.id, JSON.stringify(body)]
     );
 
-    return NextResponse.json({ success: true, message: 'Settings saved successfully' });
+    // Return updated settings
+    const updatedRes = await query('SELECT * FROM school_settings LIMIT 1');
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Settings saved successfully',
+      settings: updatedRes.rows[0]
+    });
   } catch (error) {
     return sendError(error);
   }
