@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import { Toaster } from 'react-hot-toast';
 import './globals.css';
 import './enhancements.css';
 
@@ -31,7 +32,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${plusJakarta.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen bg-background font-sans antialiased">{children}</body>
+      <body className="min-h-screen bg-background font-sans antialiased">
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

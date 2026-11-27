@@ -1,7 +1,21 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/api/assessments/route": "app/api/assessments/route.js",
+  "/api/audit-logs/route": "app/api/audit-logs/route.js",
+  "/api/auth/csrf/route": "app/api/auth/csrf/route.js",
   "/api/auth/me/route": "app/api/auth/me/route.js",
+  "/api/class-subjects/route": "app/api/class-subjects/route.js",
+  "/api/classes/route": "app/api/classes/route.js",
   "/api/dashboard/stats/route": "app/api/dashboard/stats/route.js",
+  "/api/exams/[id]/release/route": "app/api/exams/[id]/release/route.js",
+  "/api/exams/route": "app/api/exams/route.js",
+  "/api/grading/queue/route": "app/api/grading/queue/route.js",
+  "/api/marks/grid/route": "app/api/marks/grid/route.js",
+  "/api/questions/route": "app/api/questions/route.js",
+  "/api/results/section-summary/route": "app/api/results/section-summary/route.js",
+  "/api/settings/route": "app/api/settings/route.js",
+  "/api/students/route": "app/api/students/route.js",
+  "/api/subjects/route": "app/api/subjects/route.js",
+  "/api/teachers/route": "app/api/teachers/route.js",
+  "/api/terms/route": "app/api/terms/route.js",
   "/page": "app/page.js"
 }

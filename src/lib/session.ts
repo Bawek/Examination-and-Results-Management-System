@@ -129,17 +129,41 @@ export function verifyOriginHeader(request: NextRequest): boolean {
   const origin = request.headers.get('origin');
   if (!origin) return true; // Same-origin or non-browser client without Origin header
   try {
-    const originHost = new URL(origin).host.toLowerCase();
-    const expectedHost = (
-      request.headers.get('x-forwarded-host') ||
-      request.headers.get('host') ||
-      ''
-    )
-      .split(',')[0]
-      .trim()
-      .toLowerCase();
-    if (!expectedHost) return true;
-    return originHost === expectedHost;
+    const parsedOrigin = new URL(origin);
+    const originHost = parsedOrigin.host.toLowerCase();
+    const originHostname = parsedOrigin.hostname.toLowerCase();
+
+    const forwardedHost = request.headers.get('x-forwarded-host');
+    const hostHeader = request.headers.get('host');
+    const candidateHosts = [forwardedHost, hostHeader]
+      .filter(Boolean)
+      .map((h) => h!.split(',')[0].trim().toLowerCase());
+
+    if (process.env.APP_URL) {
+      try {
+        candidateHosts.push(new URL(process.env.APP_URL).host.toLowerCase());
+      } catch {
+        // ignore invalid APP_URL
+      }
+    }
+
+    if (candidateHosts.length === 0 || candidateHosts.includes(originHost)) {
+      return true;
+    }
+
+    // Allow AI Studio / Cloud Run preview proxy hostnames when proxy rewrites Host to localhost
+    if (
+      originHostname.endsWith('.run.app') ||
+      originHostname.endsWith('.googleusercontent.com') ||
+      originHostname === 'aistudio.google.com' ||
+      originHostname.endsWith('.aistudio.google.com') ||
+      originHostname === 'localhost' ||
+      originHostname === '127.0.0.1'
+    ) {
+      return true;
+    }
+
+    return false;
   } catch {
     return false;
   }

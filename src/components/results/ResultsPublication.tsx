@@ -5,6 +5,7 @@ import { Term, SchoolClass, Section } from '../../types/index.ts';
 import { ReportCardModal } from '../student/ReportCardModal.tsx';
 import { Button, Select, Badge, StatusBadge, Modal, ModalFooter, Textarea } from '../ui/index.ts';
 import { CheckCircle, Lock, Unlock, Send, FileText, Download, ShieldAlert } from 'lucide-react';
+import { showToast } from '../../lib/toast';
 
 export const ResultsPublication: React.FC = () => {
   const { currentRole } = useAuth();
@@ -55,7 +56,7 @@ export const ResultsPublication: React.FC = () => {
       setSummaries(res.summaries || []);
       setPublication(res.publication || { status: 'draft' });
     } catch (err: any) {
-      console.error(err);
+      showToast.error(`Failed to load section results: ${err.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -72,10 +73,11 @@ export const ResultsPublication: React.FC = () => {
       setActionLoading(true);
       await api.publicationAction(selectedTermId, selectedSectionId, action, reason);
       await loadSectionResults(selectedTermId, selectedSectionId);
+      showToast.success('Publication action completed successfully');
       setShowUnlockModal(false);
       setUnlockReason('');
     } catch (err: any) {
-      alert(`Action failed: ${err.message}`);
+      showToast.error(`Action failed: ${err.message || 'Unknown error'}`);
     } finally {
       setActionLoading(false);
     }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../services/api.ts';
 import { Button, Badge, Card } from '../ui/index.ts';
 import { Clock, CheckCircle2, Flag, ArrowLeft, ArrowRight, Save, Send } from 'lucide-react';
+import { showToast } from '../../lib/toast';
 
 interface ExamDeliveryRoomProps {
   attemptId: number;
@@ -57,7 +58,7 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
           });
         }
       })
-      .catch((err) => alert(`Error loading exam attempt: ${err.message}`))
+      .catch((err) => showToast.error(`Error loading exam attempt: ${err.message || 'Unknown error'}`))
       .finally(() => setLoading(false));
   }, [attemptId]);
 
@@ -85,7 +86,7 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
       const res = await api.submitAttempt(attemptId, 'Server deadline expired (auto-submit)');
       setSubmissionReceipt(res);
     } catch (err: any) {
-      console.error('Auto-submit failed:', err);
+      showToast.error('Auto-submit failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -111,8 +112,9 @@ export const ExamDeliveryRoom: React.FC<ExamDeliveryRoomProps> = ({ attemptId, o
       setIsSubmitting(true);
       const res = await api.submitAttempt(attemptId, 'Candidate manual submission');
       setSubmissionReceipt(res);
+      showToast.success('Exam submitted successfully!');
     } catch (err: any) {
-      alert(`Submission failed: ${err.message}`);
+      showToast.error(`Submission failed: ${err.message || 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }

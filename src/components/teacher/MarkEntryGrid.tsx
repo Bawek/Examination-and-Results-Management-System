@@ -3,6 +3,7 @@ import { api } from '../../services/api.ts';
 import { ClassSubject, Term, Assessment, Student } from '../../types/index.ts';
 import { Save, Send, Plus, Lock, Unlock, CheckCircle } from 'lucide-react';
 import { Button, Select, Input, Modal, ModalFooter, StatusBadge } from '../ui';
+import { showToast } from '../../lib/toast';
 
 export const MarkEntryGrid: React.FC = () => {
   const [classSubjects, setClassSubjects] = useState<ClassSubject[]>([]);
@@ -65,7 +66,7 @@ export const MarkEntryGrid: React.FC = () => {
       setStatuses(initialStatuses);
       setOverrideFlags({});
     } catch (err: any) {
-      console.error(err);
+      showToast.error(`Failed to load marks grid: ${err.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -121,11 +122,12 @@ export const MarkEntryGrid: React.FC = () => {
         }
       }
       const res = await api.saveMarks(entries, submitForReview);
+      showToast.success(submitForReview ? 'Marks successfully submitted for Registrar review (PUB-01).' : 'Draft marks saved successfully.');
       setMessage(submitForReview ? 'Marks successfully submitted for Registrar review (PUB-01).' : 'Draft marks saved successfully.');
       setTimeout(() => setMessage(''), 4000);
       loadGrid(selectedCsId, selectedTermId);
     } catch (err: any) {
-      alert(`Save failed: ${err.message}`);
+      showToast.error(`Save failed: ${err.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -145,9 +147,10 @@ export const MarkEntryGrid: React.FC = () => {
       });
       setShowAddAssmt(false);
       setAssmtName('');
+      showToast.success('Assessment created successfully');
       loadGrid(selectedCsId, selectedTermId);
     } catch (err: any) {
-      alert(`Error creating assessment: ${err.message}`);
+      showToast.error(`Error creating assessment: ${err.message || 'Unknown error'}`);
     }
   };
 

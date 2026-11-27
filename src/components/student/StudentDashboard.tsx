@@ -5,6 +5,7 @@ import { ExamDeliveryRoom } from './ExamDeliveryRoom.tsx';
 import { ReportCardModal } from './ReportCardModal.tsx';
 import { Button, Card, Badge } from '../ui/index.ts';
 import { Clock, Play, FileText, CheckCircle2 } from 'lucide-react';
+import { showToast } from '../../lib/toast';
 
 export const StudentDashboard: React.FC = () => {
   const { studentProfile } = useAuth();
@@ -25,7 +26,7 @@ export const StudentDashboard: React.FC = () => {
       const data = await api.getAvailableExams(studentId);
       setExams(data);
     } catch (err) {
-      console.error(err);
+      showToast.error('Failed to load available exams');
     } finally {
       setLoading(false);
     }
@@ -39,11 +40,11 @@ export const StudentDashboard: React.FC = () => {
     try {
       const res = await api.startAttempt(examId, studentId);
       if (res.extraMinutesGranted > 0) {
-        alert(`Approved accommodation applied: +${res.extraMinutesGranted} minutes extra time!`);
+        showToast.success(`Approved accommodation applied: +${res.extraMinutesGranted} minutes extra time!`);
       }
       setActiveAttemptId(res.attempt.id);
     } catch (err: any) {
-      alert(`Could not start sitting: ${err.message}`);
+      showToast.error(`Could not start sitting: ${err.message || 'Unknown error'}`);
     }
   };
 

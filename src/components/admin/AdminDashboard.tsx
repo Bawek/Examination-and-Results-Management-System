@@ -6,6 +6,7 @@ import {
   ArrowUpRight, GraduationCap, TrendingUp, Activity,
   BookOpen, Award, BarChart3
 } from 'lucide-react';
+import { showToast } from '../../lib/toast';
 
 interface AdminDashboardProps {
   onNavigate: (tab: string) => void;
@@ -164,7 +165,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   useEffect(() => {
     api.getDashboardStats()
       .then((data) => setStats(data))
-      .catch((err) => console.error(err))
+      .catch((err) => showToast.error('Failed to load dashboard statistics'))
       .finally(() => setLoading(false));
   }, []);
 

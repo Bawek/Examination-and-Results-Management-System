@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Role } from '../types/index.ts';
 import { api } from '../services/api.ts';
+import { showToast } from '../lib/toast';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -37,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCurrentUser(null);
       }
     } catch (err) {
-      console.error('Error fetching auth session:', err);
+      showToast.error('Error fetching authentication session');
       setCurrentUser(null);
     } finally {
       setIsLoading(false);
@@ -73,8 +74,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await api.logout();
+      showToast.success('Logged out successfully');
     } catch (err) {
-      console.warn('Logout request failed:', err);
+      showToast.warning('Logout completed (server request failed)');
     }
     setCurrentUser(null);
     setStudentProfile(null);
