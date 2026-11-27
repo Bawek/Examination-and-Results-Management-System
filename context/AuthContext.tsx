@@ -12,10 +12,14 @@ interface User {
 
 interface AuthContextType {
   user: User | null
+  currentUser: User | null // Alias for compatibility
+  currentRole: string | null // For App.tsx compatibility
+  isAuthenticated: boolean // For App.tsx compatibility
   token: string | null
   login: (username: string, password: string) => Promise<void>
   logout: () => void
   loading: boolean
+  isLoading: boolean // Alias for compatibility
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -63,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const data = await response.json()
-    console.log('[AuthContext] Login response received, token length:', data.token?.length)
+    console.log('[AuthContext] Login response received, token:', data.token)
     console.log('[AuthContext] User data:', data.user)
 
     // Update localStorage first to ensure persistence
@@ -74,11 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Then update React state
     setToken(data.token)
     setUser(data.user)
-    console.log('[AuthContext] React state updated')
+    console.log('[AuthContext] React state updated, user:', data.user.username)
   }
 
   const logout = () => {
-    console.log('[AuthContext] logout called \u2014 userId=%s, username=%s', user?.id, user?.username)
+    console.log('[AuthContext] logout called — userId=%s, username=%s', user?.id, user?.username)
     setToken(null)
     setUser(null)
     localStorage.removeItem('token')
@@ -87,7 +91,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      currentUser: user, // Alias for App.tsx
+      currentRole: user?.role || null, // For App.tsx
+      isAuthenticated: !!user, // For App.tsx
+      token, 
+      login, 
+      logout, 
+      loading,
+      isLoading: loading // Alias for App.tsx
+    }}>
       {children}
     </AuthContext.Provider>
   )

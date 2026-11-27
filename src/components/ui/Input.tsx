@@ -1,297 +1,150 @@
-import React from 'react';
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-  helper?: string;
-  icon?: React.ReactNode;
-  rightElement?: React.ReactNode;
-  fullWidth?: boolean;
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string
+  error?: string
+  icon?: React.ReactNode
+  rightElement?: React.ReactNode
+  fullWidth?: boolean
 }
 
-export const Input: React.FC<InputProps> = ({
-  label,
-  error,
-  helper,
-  icon,
-  rightElement,
-  fullWidth = false,
-  style,
-  onFocus,
-  onBlur,
-  ...props
-}) => {
-  const baseStyles = {
-    background: '#fff',
-    border: '1px solid #cbd5e1',
-    borderRadius: '8px',
-    color: '#0f172a',
-    padding: icon ? '10px 14px 10px 44px' : '10px 14px',
-    fontSize: '14px',
-    lineHeight: '1.5',
-    letterSpacing: '0.01em',
-    transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-    width: fullWidth ? '100%' : 'auto',
-    fontFamily: 'inherit',
-    outline: 'none',
-  };
-
-  const errorStyles = error ? {
-    borderColor: '#ef4444',
-  } : {};
-
-  return (
-    <div style={{ width: fullWidth ? '100%' : 'auto' }}>
-      {label && (
-        <label
-          style={{
-            display: 'block',
-            fontSize: '13px',
-            fontWeight: 500,
-            color: '#374151',
-            marginBottom: '10px',
-            lineHeight: '1.5',
-            letterSpacing: '0.01em',
-          }}
-        >
-          {label}
-        </label>
-      )}
-      <div style={{ position: 'relative' }}>
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, label, error, icon, rightElement, fullWidth, ...props }, ref) => {
+    const inputElement = (
+      <div className="relative">
         {icon && (
-          <div
-            style={{
-              position: 'absolute',
-              left: '16px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: '#94a3b8',
-              pointerEvents: 'none',
-            }}
-          >
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
             {icon}
           </div>
         )}
         <input
-          style={{
-            ...baseStyles,
-            ...errorStyles,
-            ...style,
-          }}
-          onFocus={(e) => {
-            Object.assign(e.currentTarget.style, {
-              borderColor: '#6366f1',
-              boxShadow: '0 0 0 3px rgba(99,102,241,0.15)',
-            });
-            onFocus?.(e);
-          }}
-          onBlur={(e) => {
-            Object.assign(e.currentTarget.style, {
-              borderColor: error ? '#ef4444' : '#cbd5e1',
-              boxShadow: 'none',
-            });
-            onBlur?.(e);
-          }}
+          type={type}
+          className={cn(
+            "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            icon && "pl-10",
+            rightElement && "pr-10",
+            className
+          )}
+          ref={ref}
           {...props}
         />
         {rightElement && (
-          <div
-            style={{
-              position: 'absolute',
-              right: '16px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-            }}
-          >
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
             {rightElement}
           </div>
         )}
       </div>
-      {helper && !error && (
-        <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
-          {helper}
-        </p>
-      )}
-      {error && (
-        <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '8px', lineHeight: '1.4' }}>
-          {error}
-        </p>
-      )}
-    </div>
-  );
-};
+    )
 
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string;
-  error?: string;
-  fullWidth?: boolean;
+    if (label || error) {
+      return (
+        <div className={cn("space-y-2", fullWidth && "w-full")}>
+          {label && (
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              {label}
+              {props.required && <span className="text-destructive ml-1">*</span>}
+            </label>
+          )}
+          {inputElement}
+          {error && (
+            <p className="text-sm font-medium text-destructive">{error}</p>
+          )}
+        </div>
+      )
+    }
+
+    return inputElement
+  }
+)
+Input.displayName = "Input"
+
+export interface TextareaProps
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label?: string
+  error?: string
+  fullWidth?: boolean
 }
 
-export const Select: React.FC<SelectProps> = ({
-  label,
-  error,
-  fullWidth = false,
-  style,
-  children,
-  onFocus,
-  onBlur,
-  ...props
-}) => {
-  const baseStyles = {
-    background: '#fff',
-    border: '1px solid #cbd5e1',
-    borderRadius: '8px',
-    color: '#0f172a',
-    padding: '10px 14px',
-    fontSize: '14px',
-    lineHeight: '1.5',
-    letterSpacing: '0.01em',
-    transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-    width: fullWidth ? '100%' : 'auto',
-    fontFamily: 'inherit',
-    outline: 'none',
-    cursor: 'pointer',
-    appearance: 'none',
-    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-    backgroundPosition: 'right 0.5rem center',
-    backgroundRepeat: 'no-repeat',
-    backgroundSize: '1.5em 1.5em',
-    paddingRight: '2.5rem',
-  };
+const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, label, error, fullWidth, ...props }, ref) => {
+    const textareaElement = (
+      <textarea
+        className={cn(
+          "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
 
-  const errorStyles = error ? {
-    borderColor: '#ef4444',
-  } : {};
+    if (label || error) {
+      return (
+        <div className={cn("space-y-2", fullWidth && "w-full")}>
+          {label && (
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              {label}
+              {props.required && <span className="text-destructive ml-1">*</span>}
+            </label>
+          )}
+          {textareaElement}
+          {error && (
+            <p className="text-sm font-medium text-destructive">{error}</p>
+          )}
+        </div>
+      )
+    }
 
-  return (
-    <div style={{ width: fullWidth ? '100%' : 'auto' }}>
-      {label && (
-        <label
-          style={{
-            display: 'block',
-            fontSize: '13px',
-            fontWeight: 500,
-            color: '#374151',
-            marginBottom: '10px',
-            lineHeight: '1.5',
-            letterSpacing: '0.01em',
-          }}
-        >
-          {label}
-        </label>
-      )}
+    return textareaElement
+  }
+)
+Textarea.displayName = "Textarea"
+
+export interface SelectProps
+  extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  label?: string
+  error?: string
+  fullWidth?: boolean
+}
+
+const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
+  ({ className, children, label, error, fullWidth, ...props }, ref) => {
+    const selectElement = (
       <select
-        style={{
-          ...baseStyles,
-          ...errorStyles,
-          ...style,
-        }}
-        onFocus={(e) => {
-          Object.assign(e.currentTarget.style, {
-            borderColor: '#6366f1',
-            boxShadow: '0 0 0 3px rgba(99,102,241,0.15)',
-          });
-          onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          Object.assign(e.currentTarget.style, {
-            borderColor: error ? '#ef4444' : '#cbd5e1',
-            boxShadow: 'none',
-          });
-          onBlur?.(e);
-        }}
+        className={cn(
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
         {...props}
       >
         {children}
       </select>
-      {error && (
-        <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '8px', lineHeight: '1.4' }}>
-          {error}
-        </p>
-      )}
-    </div>
-  );
-};
+    )
 
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label?: string;
-  error?: string;
-  fullWidth?: boolean;
-}
+    if (label || error) {
+      return (
+        <div className={cn("space-y-2", fullWidth && "w-full")}>
+          {label && (
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              {label}
+              {props.required && <span className="text-destructive ml-1">*</span>}
+            </label>
+          )}
+          {selectElement}
+          {error && (
+            <p className="text-sm font-medium text-destructive">{error}</p>
+          )}
+        </div>
+      )
+    }
 
-export const Textarea: React.FC<TextareaProps> = ({
-  label,
-  error,
-  fullWidth = false,
-  style,
-  onFocus,
-  onBlur,
-  ...props
-}) => {
-  const baseStyles = {
-    background: '#fff',
-    border: '1px solid #cbd5e1',
-    borderRadius: '8px',
-    color: '#0f172a',
-    padding: '12px 14px',
-    fontSize: '14px',
-    lineHeight: '1.6',
-    letterSpacing: '0.01em',
-    transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-    width: fullWidth ? '100%' : 'auto',
-    fontFamily: 'inherit',
-    outline: 'none',
-    resize: 'vertical' as const,
-  };
+    return selectElement
+  }
+)
+Select.displayName = "Select"
 
-  const errorStyles = error ? {
-    borderColor: '#ef4444',
-  } : {};
-
-  return (
-    <div style={{ width: fullWidth ? '100%' : 'auto' }}>
-      {label && (
-        <label
-          style={{
-            display: 'block',
-            fontSize: '13px',
-            fontWeight: 500,
-            color: '#374151',
-            marginBottom: '10px',
-            lineHeight: '1.5',
-            letterSpacing: '0.01em',
-          }}
-        >
-          {label}
-        </label>
-      )}
-      <textarea
-        style={{
-          ...baseStyles,
-          ...errorStyles,
-          ...style,
-        }}
-        onFocus={(e) => {
-          Object.assign(e.currentTarget.style, {
-            borderColor: '#6366f1',
-            boxShadow: '0 0 0 3px rgba(99,102,241,0.15)',
-          });
-          onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          Object.assign(e.currentTarget.style, {
-            borderColor: error ? '#ef4444' : '#cbd5e1',
-            boxShadow: 'none',
-          });
-          onBlur?.(e);
-        }}
-        {...props}
-      />
-      {error && (
-        <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '8px', lineHeight: '1.4' }}>
-          {error}
-        </p>
-      )}
-    </div>
-  );
-};
+export { Input, Textarea, Select }
+export type { InputProps as InputPropsType, TextareaProps, SelectProps }

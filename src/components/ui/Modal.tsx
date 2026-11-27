@@ -1,11 +1,13 @@
 import React, { useEffect, useRef } from 'react';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   showCloseButton?: boolean;
 }
 
@@ -44,30 +46,17 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
-  const sizeStyles = {
-    sm: { maxWidth: '400px' },
-    md: { maxWidth: '500px' },
-    lg: { maxWidth: '700px' },
-    xl: { maxWidth: '900px' },
+  const sizeClasses = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+    '2xl': 'max-w-2xl',
   };
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        paddingTop: '40px',
-        paddingBottom: '40px',
-        paddingLeft: '24px',
-        paddingRight: '24px',
-        background: 'rgba(0, 0, 0, 0.5)',
-        animation: 'fadeIn 0.2s ease',
-        overflow: 'auto',
-      }}
+      className="fixed inset-0 z-50 flex items-start justify-center pt-10 pb-10 px-4 bg-black/50 overflow-y-auto animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -76,83 +65,33 @@ export const Modal: React.FC<ModalProps> = ({
     >
       <div
         ref={modalRef}
-        style={{
-          width: '100%',
-          ...sizeStyles[size],
-          background: '#fff',
-          border: '1px solid #e2e8f0',
-          borderRadius: '16px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-          animation: 'fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
+        className={cn(
+          "w-full bg-white border border-gray-200 rounded-lg shadow-xl animate-in zoom-in-95 fade-in duration-300 max-h-[90vh] flex flex-col",
+          sizeClasses[size]
+        )}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         {(title || showCloseButton) && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '20px 24px',
-              borderBottom: '1px solid #e2e8f0',
-              flexShrink: 0,
-            }}
-          >
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
             {title && (
-              <h3
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 600,
-                  color: '#0f172a',
-                  margin: 0,
-                }}
-              >
+              <h3 className="text-lg font-semibold text-gray-900">
                 {title}
               </h3>
             )}
             {showCloseButton && (
               <button
                 onClick={onClose}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#9ca3af',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#f1f5f9';
-                  e.currentTarget.style.color = '#374151';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#9ca3af';
-                }}
+                className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
               >
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
+                <X className="h-5 w-5" />
               </button>
             )}
           </div>
         )}
-        <div
-          className="modal-scrollable"
-          style={{
-            padding: '24px',
-            flex: 1,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-          }}
-        >
+
+        {/* Content */}
+        <div className="px-6 py-4 overflow-y-auto flex-1">
           {children}
         </div>
       </div>
@@ -162,21 +101,14 @@ export const Modal: React.FC<ModalProps> = ({
 
 interface ModalFooterProps {
   children: React.ReactNode;
-  style?: React.CSSProperties;
+  className?: string;
 }
 
-export const ModalFooter: React.FC<ModalFooterProps> = ({ children, style }) => (
-  <div
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'flex-end',
-      gap: '12px',
-      paddingTop: '20px',
-      borderTop: '1px solid #e2e8f0',
-      ...style,
-    }}
-  >
+export const ModalFooter: React.FC<ModalFooterProps> = ({ children, className }) => (
+  <div className={cn(
+    "flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-lg",
+    className
+  )}>
     {children}
   </div>
 );

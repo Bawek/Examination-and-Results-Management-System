@@ -1,142 +1,76 @@
-import React from 'react';
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
-  icon?: React.ReactNode;
-  iconPosition?: 'left' | 'right';
-  fullWidth?: boolean;
-  loading?: boolean;
+import { cn } from "@/lib/utils"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+        primary: "bg-primary text-primary-foreground hover:bg-primary/90",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+  loading?: boolean
+  icon?: React.ReactNode
+  iconPosition?: 'left' | 'right'
+  fullWidth?: boolean
 }
 
-export const Button: React.FC<ButtonProps> = ({
-  variant = 'primary',
-  size = 'md',
-  icon,
-  iconPosition = 'left',
-  fullWidth = false,
-  loading = false,
-  children,
-  disabled,
-  style,
-  onFocus,
-  ...props
-}) => {
-  const baseStyles = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: 500,
-    lineHeight: '1.5',
-    letterSpacing: '0.01em',
-    cursor: disabled || loading ? 'not-allowed' : 'pointer',
-    transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-    border: '1px solid transparent',
-    whiteSpace: 'nowrap' as const,
-    outline: 'none',
-  };
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, loading, icon, iconPosition = 'left', fullWidth, children, disabled, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    
+    return (
+      <Comp
+        className={cn(
+          buttonVariants({ variant, size, className }),
+          fullWidth && "w-full"
+        )}
+        ref={ref}
+        disabled={disabled || loading}
+        {...props}
+      >
+        {loading && (
+          <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        )}
+        {!loading && icon && iconPosition === 'left' && icon}
+        {children}
+        {!loading && icon && iconPosition === 'right' && icon}
+      </Comp>
+    )
+  }
+)
+Button.displayName = "Button"
 
-  const variantStyles = {
-    primary: {
-      background: '#4f46e5',
-      color: '#fff',
-      borderColor: '#4f46e5',
-      boxShadow: '0 1px 3px rgba(79,70,229,0.3)',
-    },
-    secondary: {
-      background: '#fff',
-      color: '#374151',
-      borderColor: '#e2e8f0',
-      border: '1px solid #e2e8f0',
-    },
-    ghost: {
-      background: 'transparent',
-      color: '#6b7280',
-      borderColor: 'transparent',
-    },
-    danger: {
-      background: '#fee2e2',
-      color: '#b91c1c',
-      borderColor: '#fca5a5',
-      border: '1px solid #fca5a5',
-    },
-  };
-
-  const sizeStyles = {
-    sm: { padding: '10px 16px', fontSize: '13px' },
-    md: { padding: '12px 20px', fontSize: '14px' },
-    lg: { padding: '14px 24px', fontSize: '15px' },
-  };
-
-  const hoverStyles = variant === 'primary' ? {
-    background: '#4338ca',
-    boxShadow: '0 4px 12px rgba(79,70,229,0.35)',
-    transform: 'translateY(-1px)',
-  } : variant === 'secondary' ? {
-    background: '#f8fafc',
-    borderColor: '#cbd5e1',
-  } : variant === 'ghost' ? {
-    background: '#f3f4f6',
-    color: '#374151',
-  } : variant === 'danger' ? {
-    background: '#fecaca',
-    borderColor: '#f87171',
-  } : {};
-
-  const mergedStyles = {
-    ...baseStyles,
-    ...variantStyles[variant],
-    ...sizeStyles[size],
-    width: fullWidth ? '100%' : 'auto',
-    opacity: disabled || loading ? 0.6 : 1,
-    ...style,
-  };
-
-  return (
-    <button
-      disabled={disabled || loading}
-      style={mergedStyles}
-      onMouseEnter={(e) => {
-        if (!disabled && !loading) {
-          Object.assign(e.currentTarget.style, hoverStyles);
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!disabled && !loading) {
-          Object.assign(e.currentTarget.style, {
-            ...variantStyles[variant],
-            transform: 'translateY(0)',
-          });
-        }
-      }}
-      onFocus={(e) => {
-        e.currentTarget.style.outline = '2px solid #6366f1';
-        e.currentTarget.style.outlineOffset = '2px';
-        onFocus?.(e);
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.outline = 'none';
-      }}
-      {...props}
-    >
-      {loading && (
-        <div
-          style={{
-            width: '14px',
-            height: '14px',
-            border: '2px solid rgba(79,70,229,0.3)',
-            borderTopColor: '#4f46e5',
-            borderRadius: '50%',
-            animation: 'spin-smooth 0.8s linear infinite',
-          }}
-        />
-      )}
-      {!loading && iconPosition === 'left' && icon}
-      {children}
-      {!loading && iconPosition === 'right' && icon}
-    </button>
-  );
-};
+export { Button, buttonVariants }

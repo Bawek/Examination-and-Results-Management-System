@@ -1,98 +1,48 @@
-import React from 'react';
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
 
-interface BadgeProps {
-  children: React.ReactNode;
-  variant?: 'success' | 'warning' | 'danger' | 'info' | 'brand' | 'muted';
-  size?: 'sm' | 'md';
-  dot?: boolean;
-  style?: React.CSSProperties;
+import { cn } from "@/lib/utils"
+
+const badgeVariants = cva(
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        destructive:
+          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+        outline: "text-foreground",
+        brand: "border-transparent bg-primary/10 text-primary hover:bg-primary/20",
+        success: "border-transparent bg-green-100 text-green-800 hover:bg-green-200",
+        warning: "border-transparent bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
+        danger: "border-transparent bg-red-100 text-red-800 hover:bg-red-200",
+        info: "border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200",
+        muted: "border-transparent bg-gray-100 text-gray-800 hover:bg-gray-200",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {
+  dot?: boolean
 }
 
-export const Badge: React.FC<BadgeProps> = ({
-  children,
-  variant = 'brand',
-  size = 'sm',
-  dot = false,
-  style,
-}) => {
-  const variantStyles = {
-    success: {
-      background: '#dcfce7',
-      color: '#166534',
-      border: '1px solid #bbf7d0',
-    },
-    warning: {
-      background: '#fef9c3',
-      color: '#854d0e',
-      border: '1px solid #fde047',
-    },
-    danger: {
-      background: '#fee2e2',
-      color: '#991b1b',
-      border: '1px solid #fca5a5',
-    },
-    info: {
-      background: '#dbeafe',
-      color: '#1e40af',
-      border: '1px solid #93c5fd',
-    },
-    brand: {
-      background: '#ede9fe',
-      color: '#4c1d95',
-      border: '1px solid #c4b5fd',
-    },
-    muted: {
-      background: '#f1f5f9',
-      color: '#475569',
-      border: '1px solid #e2e8f0',
-    },
-  };
-
-  const sizeStyles = {
-    sm: {
-      padding: '4px 10px',
-      fontSize: '12px',
-      gap: '4px',
-      lineHeight: '1.4',
-    },
-    md: {
-      padding: '6px 14px',
-      fontSize: '13px',
-      gap: '6px',
-      lineHeight: '1.4',
-    },
-  };
-
+function Badge({ className, variant, dot, children, ...props }: BadgeProps) {
   return (
-    <span
-      className="badge"
-      style={{
-        display: style?.display || 'inline-flex',
-        alignItems: style?.alignItems || 'center',
-        justifyContent: style?.justifyContent || 'center',
-        borderRadius: '100px',
-        fontWeight: 600,
-        letterSpacing: '0.02em',
-        ...variantStyles[variant],
-        ...sizeStyles[size],
-        ...style,
-      }}
-    >
-      {dot && (
-        <span
-          style={{
-            width: '6px',
-            height: '6px',
-            borderRadius: '50%',
-            background: 'currentColor',
-            animation: 'pulse-glow 2s ease-in-out infinite',
-          }}
-        />
-      )}
+    <div className={cn(badgeVariants({ variant }), className)} {...props}>
+      {dot && <span className="mr-1 h-1.5 w-1.5 rounded-full bg-current" />}
       {children}
-    </span>
-  );
-};
+    </div>
+  )
+}
 
 interface StatusBadgeProps {
   status: string;
@@ -118,3 +68,5 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, label }) => {
 
   return <Badge variant={config.variant}>{displayLabel}</Badge>;
 };
+
+export { Badge, badgeVariants }
